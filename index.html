@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>⚽ Copa Bets</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --green:#006847;
+  --green-mid:#00875f;
+  --green-light:#e8f5e9;
+  --gold:#FFD700;
+  --gold-dark:#c8a800;
+  --white:#ffffff;
+  --off-white:#f9f8f4;
+  --text:#1a1a1a;
+  --text-muted:#6b7280;
+  --text-light:#9ca3af;
+  --border:#e5e7eb;
+  --border-dark:#d1d5db;
+  --red:#dc2626;
+  --red-light:#fef2f2;
+  --success:#16a34a;
+  --success-light:#f0fdf4;
+  --warning:#d97706;
+  --warning-light:#fffbeb;
+  --surface:#ffffff;
+  --page-bg:#f0f4f0;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+}
+
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--page-bg);
+  color:var(--text);
+  min-height:100vh;
+  padding-bottom:100px;
+}
+
+/* ── HEADER ── */
+.site-header{
+  background:var(--green);
+  position:sticky;top:0;z-index:100;
+  padding:0 16px;
+}
+.header-inner{
+  max-width:600px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;
+}
+.logo{
+  font-family:'Bebas Neue',cursive;
+  font-size:28px;letter-spacing:2px;
+  color:var(--gold);
+  display:flex;align-items:center;gap:8px;
+  line-height:1;
+}
+.logo span{color:#fff;font-size:20px;}
+.header-stats{
+  display:flex;gap:16px;
+}
+.hstat{text-align:center;}
+.hstat-val{
+  font-family:'Bebas Neue',cursive;
+  font-size:20px;color:var(--gold);line-height:1;
+}
+.hstat-label{font-size:10px;color:rgba(255,255,255,0.7);letter-spacing:.5px;text-transform:uppercase;}
+
+/* ── SUMMARY STRIP ── */
+.summary-strip{
+  background:var(--green-mid);
+  padding:10px 16px;
+}
+.strip-inner{
+  max-width:600px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;
+}
+.scard{
+  background:rgba(255,255,255,0.12);
+  border-radius:8px;padding:8px 6px;text-align:center;
+}
+.scard-val{
+  font-family:'Bebas Neue',cursive;
+  font-size:22px;color:#fff;line-height:1;
+}
+.scard-val.gold{color:var(--gold);}
+.scard-val.green{color:#6ee7b7;}
+.scard-val.red{color:#fca5a5;}
+.scard-lbl{font-size:9px;color:rgba(255,255,255,0.65);letter-spacing:.4px;text-transform:uppercase;margin-top:2px;}
+
+/* ── TABS ── */
+.tabs-wrap{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:56px;z-index:90;}
+.tabs{
+  max-width:600px;margin:0 auto;
+  display:flex;
+}
+.tab-btn{
+  flex:1;padding:12px 8px;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;
+  border:none;background:none;cursor:pointer;
+  color:var(--text-muted);
+  border-bottom:3px solid transparent;
+  transition:all .2s;
+}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--border);color:var(--text-muted);
+  font-size:11px;border-radius:10px;padding:1px 7px;margin-left:5px;
+  font-family:'Inter',sans-serif;font-weight:600;
+}
+.tab-btn.active .tab-badge{background:var(--green-light);color:var(--green);}
+
+/* ── MAIN ── */
+.main{max-width:600px;margin:0 auto;padding:16px 12px 0;}
+
+/* ── SECTION TITLE ── */
+.section-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--text-muted);padding:0 4px 8px;
+}
+
+/* ── BET CARD ── */
+.bet-card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  margin-bottom:10px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform .15s;
+}
+.bet-card:active{transform:scale(0.99);}
+.bet-card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px 10px;
+  border-bottom:1px solid var(--border);
+}
+.bet-meta{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.bet-house{
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;
+  background:var(--green-light);color:var(--green);
+  border-radius:6px;padding:3px 8px;white-space:nowrap;
+}
+.bet-date{font-size:12px;color:var(--text-muted);}
+.bet-status-pill{
+  font-size:11px;font-weight:600;border-radius:20px;padding:3px 10px;
+  white-space:nowrap;margin-left:6px;
+}
+.status-pending{background:var(--warning-light);color:var(--warning);}
+.status-won{background:var(--success-light);color:var(--success);}
+.status-lost{background:var(--red-light);color:var(--red);}
+.status-partial{background:#fef3c7;color:#b45309;}
+
+.bet-card-body{padding:12px 14px;}
+.bet-desc{
+  font-size:14px;color:var(--text);line-height:1.5;
+  margin-bottom:10px;font-weight:500;
+}
+
+/* ── BINGOS ── */
+.bingos-title{
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--text-muted);margin-bottom:6px;
+}
+.bingo-list{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.bingo-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;
+  background:var(--off-white);border-radius:8px;
+  cursor:pointer;user-select:none;
+  transition:background .15s;
+}
+.bingo-item:hover{background:#e9f0e9;}
+.bingo-item.checked{background:var(--success-light);}
+.bingo-item.checked .bingo-text{color:var(--success);text-decoration:line-through;opacity:.8;}
+.bingo-check{
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--border-dark);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;
+  background:#fff;
+}
+.bingo-item.checked .bingo-check{background:var(--success);border-color:var(--success);}
+.bingo-check svg{display:none;width:12px;height:12px;stroke:#fff;stroke-width:2.5;}
+.bingo-item.checked .bingo-check svg{display:block;}
+.bingo-text{font-size:13px;color:var(--text);flex:1;line-height:1.4;}
+
+/* ── BET FINANCIALS ── */
+.bet-financials{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  margin-top:4px;
+}
+.fin-box{
+  background:var(--off-white);border-radius:8px;padding:8px 10px;text-align:center;
+}
+.fin-label{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:3px;}
+.fin-val{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text);}
+.fin-val.gold{color:var(--gold-dark);}
+.fin-val.green{color:var(--success);}
+
+/* ── CARD ACTIONS ── */
+.bet-card-footer{
+  display:flex;gap:6px;padding:8px 14px 12px;
+}
+.btn-action{
+  flex:1;padding:8px;border-radius:8px;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;
+  border:1.5px solid var(--border-dark);
+  background:#fff;color:var(--text-muted);cursor:pointer;
+  transition:all .15s;
+}
+.btn-action:hover{background:var(--off-white);}
+.btn-edit{border-color:var(--green);color:var(--green);}
+.btn-edit:hover{background:var(--green-light);}
+.btn-delete{border-color:var(--red);color:var(--red);}
+.btn-delete:hover{background:var(--red-light);}
+.btn-won{background:var(--success);color:#fff;border-color:var(--success);}
+.btn-won:hover{background:#15803d;}
+.btn-lost{background:var(--red);color:#fff;border-color:var(--red);}
+.btn-lost:hover{background:#b91c1c;}
+
+/* ── FAB ── */
+.fab{
+  position:fixed;bottom:24px;right:20px;z-index:200;
+  width:56px;height:56px;border-radius:50%;
+  background:var(--gold);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.25);
+  transition:transform .15s,box-shadow .15s;
+}
+.fab:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+.fab svg{width:26px;height:26px;stroke:var(--green);stroke-width:2.5;}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:300;display:none;align-items:flex-end;
+  backdrop-filter:blur(2px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:#fff;width:100%;max-height:92vh;overflow-y:auto;
+  border-radius:20px 20px 0 0;
+  padding:0 0 env(safe-area-inset-bottom,16px);
+  animation:slideUp .28s cubic-bezier(.32,1,.32,1);
+}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{
+  width:40px;height:4px;background:var(--border-dark);border-radius:2px;
+  margin:12px auto 0;
+}
+.modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+}
+.modal-title{
+  font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;
+  color:var(--green);
+}
+.modal-close{
+  width:32px;height:32px;border-radius:50%;background:var(--off-white);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);font-size:18px;
+}
+.modal-body{padding:16px 20px;}
+
+/* ── FORM ── */
+.form-group{margin-bottom:14px;}
+.form-label{
+  display:block;font-size:12px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--text-muted);margin-bottom:6px;
+}
+.form-input{
+  width:100%;padding:10px 12px;
+  border:1.5px solid var(--border-dark);border-radius:8px;
+  font-family:'Inter',sans-serif;font-size:15px;color:var(--text);
+  background:#fff;outline:none;
+  transition:border-color .15s;
+}
+.form-input:focus{border-color:var(--green);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+.bingo-builder{margin-top:6px;}
+.bingo-entry{
+  display:flex;gap:6px;align-items:center;margin-bottom:6px;
+}
+.bingo-entry .form-input{flex:1;}
+.btn-remove-bingo{
+  width:32px;height:32px;border-radius:50%;
+  border:1.5px solid var(--border-dark);background:#fff;
+  color:var(--text-muted);font-size:16px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.btn-remove-bingo:hover{background:var(--red-light);border-color:var(--red);color:var(--red);}
+.btn-add-bingo{
+  width:100%;padding:8px;border-radius:8px;
+  border:1.5px dashed var(--border-dark);background:#fff;
+  color:var(--text-muted);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;margin-top:2px;
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;
+}
+.btn-add-bingo:hover{border-color:var(--green);color:var(--green);background:var(--green-light);}
+.btn-save{
+  width:100%;padding:14px;margin-top:6px;
+  background:var(--green);color:#fff;
+  border:none;border-radius:10px;cursor:pointer;
+  font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;
+  transition:background .15s;
+}
+.btn-save:hover{background:#005c3d;}
+
+/* ── EMPTY STATE ── */
+.empty{
+  text-align:center;padding:48px 20px;
+}
+.empty-ball{font-size:56px;line-height:1;margin-bottom:12px;}
+.empty-title{
+  font-family:'Bebas Neue',cursive;font-size:24px;color:var(--text-muted);
+  letter-spacing:1px;margin-bottom:6px;
+}
+.empty-sub{font-size:14px;color:var(--text-light);}
+
+/* ── CONFIRM MODAL ── */
+.confirm-modal{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:400;display:none;align-items:center;justify-content:center;padding:20px;
+}
+.confirm-modal.open{display:flex;}
+.confirm-box{
+  background:#fff;border-radius:16px;padding:24px 20px;width:100%;max-width:340px;
+  text-align:center;box-shadow:var(--shadow-lg);
+}
+.confirm-icon{font-size:40px;margin-bottom:10px;}
+.confirm-title{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;margin-bottom:8px;}
+.confirm-msg{font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;}
+.confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.btn-cancel-confirm{
+  padding:11px;border-radius:8px;border:1.5px solid var(--border-dark);
+  background:#fff;color:var(--text-muted);font-weight:600;font-size:14px;cursor:pointer;
+}
+.btn-confirm-ok{
+  padding:11px;border-radius:8px;border:none;
+  background:var(--red);color:#fff;font-weight:600;font-size:14px;cursor:pointer;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1a1a1a;color:#fff;
+  padding:10px 20px;border-radius:30px;
+  font-size:14px;font-weight:500;
+  z-index:500;opacity:0;transition:all .25s;pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── FIELD HELP ── */
+.field-help{font-size:11px;color:var(--text-light);margin-top:3px;}
+
+/* ── NO-BET PLACEHOLDER ── */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── PROGRESS BAR ── */
+.bet-progress{
+  margin-top:8px;background:var(--border);border-radius:4px;height:4px;overflow:hidden;
+}
+.bet-progress-fill{height:100%;background:var(--green);border-radius:4px;transition:width .3s;}
+
+@media(min-width:480px){
+  .main{padding:20px 16px 0;}
+  .site-header{padding:0 24px;}
+  .summary-strip{padding:12px 24px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">⚽ <span>COPA</span>BETS</div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-val" id="h-total-bets">0</div>
+        <div class="hstat-label">Apostas</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val" id="h-lucro">R$ 0</div>
+        <div class="hstat-label">Saldo</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SUMMARY STRIP -->
+<div class="summary-strip">
+  <div class="strip-inner">
+    <div class="scard">
+      <div class="scard-val gold" id="s-pendentes">0</div>
+      <div class="scard-lbl">Em Jogo</div>
+    </div>
+    <div class="scard">
+      <div class="scard-val green" id="s-ganhas">0</div>
+      <div class="scard-lbl">Ganhas</div>
+    </div>
+    <div class="scard">
+      <div class="scard-val red" id="s-perdidas">0</div>
+      <div class="scard-lbl">Perdidas</div>
+    </div>
+    <div class="scard">
+      <div class="scard-val" id="s-roi" style="color:#fff">0%</div>
+      <div class="scard-lbl">ROI</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="pendentes" onclick="switchTab('pendentes')">
+      Em Jogo <span class="tab-badge" id="badge-pendentes">0</span>
+    </button>
+    <button class="tab-btn" data-tab="ganhas" onclick="switchTab('ganhas')">
+      Ganhas <span class="tab-badge" id="badge-ganhas">0</span>
+    </button>
+    <button class="tab-btn" data-tab="perdidas" onclick="switchTab('perdidas')">
+      Perdidas <span class="tab-badge" id="badge-perdidas">0</span>
+    </button>
+    <button class="tab-btn" data-tab="todas" onclick="switchTab('todas')">
+      Todas <span class="tab-badge" id="badge-todas">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+  <div id="tab-pendentes" class="tab-panel active"></div>
+  <div id="tab-ganhas" class="tab-panel"></div>
+  <div id="tab-perdidas" class="tab-panel"></div>
+  <div id="tab-todas" class="tab-panel"></div>
+</main>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()" title="Nova aposta">
+  <svg viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- MODAL DE APOSTA -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Nova Aposta ⚽</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Casa de Aposta</label>
+          <input class="form-input" id="f-casa" type="text" placeholder="Betano, KTO..."/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data</label>
+          <input class="form-input" id="f-data" type="date"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descrição / Tipo de Aposta</label>
+        <input class="form-input" id="f-desc" type="text" placeholder="Ex: Brasil vence a Copa, Ambas marcam..."/>
+        <div class="field-help">Descreva brevemente o que foi apostado</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Eventos / Condições (Bingo)</label>
+        <div class="bingo-builder" id="bingo-builder"></div>
+        <button class="btn-add-bingo" onclick="addBingo()">+ Adicionar Evento</button>
+        <div class="field-help">Adicione cada jogo ou condição que precisa acontecer</div>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Odd</label>
+          <input class="form-input" id="f-odd" type="number" step="0.01" min="1" placeholder="2.50"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor (R$)</label>
+          <input class="form-input" id="f-valor" type="number" step="0.01" min="0" placeholder="50.00"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Retorno (R$)</label>
+          <input class="form-input" id="f-retorno" type="number" step="0.01" min="0" placeholder="125.00" id="f-retorno"/>
+        </div>
+      </div>
+
+      <button class="btn-save" id="btn-save" onclick="saveBet()">SALVAR APOSTA</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Excluir Aposta?</div>
+    <div class="confirm-msg">Essa ação não pode ser desfeita. A aposta será removida permanentemente.</div>
+    <div class="confirm-btns">
+      <button class="btn-cancel-confirm" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-confirm-ok" onclick="executeDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE LOADING -->
+<div id="firebase-loading" style="position:fixed;inset:0;background:rgba(0,100,60,0.97);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;font-family:'Inter',sans-serif;padding:24px;text-align:center;">
+  <div style="font-size:56px">⚽</div>
+  <div style="font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:2px;color:#FFD700">COPA BETS</div>
+  <div style="font-size:15px;opacity:0.85">Conectando ao banco de dados...</div>
+  <div style="width:40px;height:40px;border:3px solid rgba(255,255,255,0.3);border-top-color:#FFD700;border-radius:50%;animation:spin 0.8s linear infinite;margin-top:8px"></div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
+
+<!-- SETUP GUIDE (shown if credentials not set) -->
+<div id="setup-guide" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1000;overflow-y:auto;padding:20px;font-family:'Inter',sans-serif;color:#fff;">
+  <div style="max-width:560px;margin:0 auto;padding:24px 0;">
+    <div style="font-family:'Bebas Neue',cursive;font-size:36px;color:#FFD700;letter-spacing:2px;margin-bottom:4px">⚙️ CONFIGURAÇÃO</div>
+    <p style="color:#9ca3af;margin-bottom:24px;font-size:14px">Você precisa criar um projeto Firebase gratuito para salvar as apostas na nuvem. Siga os passos abaixo:</p>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div style="background:#1f2937;border-radius:12px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;color:#FFD700">1. Crie o projeto Firebase</div>
+        <div style="font-size:13px;color:#d1d5db;line-height:1.6">
+          Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:#60a5fa">console.firebase.google.com</a> → <b>Adicionar projeto</b> → dê um nome (ex: <i>copa-bets</i>) → desative o Google Analytics → <b>Criar projeto</b>
+        </div>
+      </div>
+
+      <div style="background:#1f2937;border-radius:12px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;color:#FFD700">2. Ative o Firestore</div>
+        <div style="font-size:13px;color:#d1d5db;line-height:1.6">
+          No menu lateral: <b>Criação → Firestore Database</b> → <b>Criar banco de dados</b> → escolha <b>Modo de teste</b> (30 dias grátis, suficiente para a Copa) → selecione a região <i>southamerica-east1</i> → <b>Ativar</b>
+        </div>
+      </div>
+
+      <div style="background:#1f2937;border-radius:12px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;color:#FFD700">3. Registre o app Web</div>
+        <div style="font-size:13px;color:#d1d5db;line-height:1.6">
+          Na tela inicial do projeto → clique no ícone <b>&lt;/&gt;</b> (Web) → dê um apelido → <b>Registrar app</b> → copie o bloco <code style="background:#374151;padding:2px 6px;border-radius:4px">firebaseConfig = { ... }</code>
+        </div>
+      </div>
+
+      <div style="background:#1f2937;border-radius:12px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;color:#FFD700">4. Cole as credenciais no HTML</div>
+        <div style="font-size:13px;color:#d1d5db;line-height:1.6">
+          Abra o arquivo <code style="background:#374151;padding:2px 6px;border-radius:4px">copa_bets.html</code> em um editor de texto, encontre o bloco <b>firebaseConfig</b> e substitua cada campo <code style="background:#374151;padding:2px 6px;border-radius:4px">COLE_SUA_...</code> com os valores copiados. Depois faça push para o GitHub.
+        </div>
+      </div>
+
+      <div style="background:#064e3b;border:1px solid #10b981;border-radius:12px;padding:16px;">
+        <div style="font-weight:700;margin-bottom:6px;color:#10b981">✅ Pronto!</div>
+        <div style="font-size:13px;color:#d1d5db;line-height:1.6">
+          Após o push, todas as apostas ficam salvas na nuvem. Qualquer amigo que abrir o link verá as mesmas apostas em tempo real. Alterações aparecem instantaneamente em todos os dispositivos.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Verifica se as credenciais ainda são placeholder
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const scripts = document.querySelectorAll('script[type="module"]');
+    let src = '';
+    scripts.forEach(s => src += s.textContent);
+    if(src.includes('COLE_SUA_API_KEY_AQUI')){
+      document.getElementById('firebase-loading').style.display = 'none';
+      document.getElementById('setup-guide').style.display = 'block';
+    }
+  }, 500);
+});
+</script>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ── CONFIGURAÇÃO FIREBASE ──────────────────────────────────────────────
+  // PASSO 1: Substitua os valores abaixo com as credenciais do seu projeto Firebase
+  // Veja as instruções no final da página após carregar o site
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0yWy1kc-3wjBc4B679jYb9pohe8oLmps",
+    authDomain: "laudel-tips.firebaseapp.com",
+    projectId: "laudel-tips",
+    storageBucket: "laudel-tips.firebasestorage.app",
+    messagingSenderId: "367865870648",
+    appId: "1:367865870648:web:c4e2fdd73f451accfb69cd"
+  };
+  // ──────────────────────────────────────────────────────────────────────
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const betsCol = collection(db, "copa_bets");
+
+  window._db = db;
+  window._betsCol = betsCol;
+  window._firestoreFns = { doc, setDoc, deleteDoc, query, orderBy, onSnapshot };
+
+  // Escuta mudanças em tempo real → atualiza para todos os dispositivos
+  const q = query(betsCol, orderBy("createdAt", "desc"));
+  onSnapshot(q, (snapshot) => {
+    bets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAll();
+    // Esconde o loading inicial
+    const loading = document.getElementById('firebase-loading');
+    if(loading) loading.style.display = 'none';
+  }, (err) => {
+    console.error("Firebase error:", err);
+    const loading = document.getElementById('firebase-loading');
+    if(loading){
+      loading.innerHTML = `<div style="color:#dc2626;padding:20px;text-align:center;">
+        ⚠️ Erro ao conectar com o Firebase.<br>
+        <small>Verifique se as credenciais estão corretas e se o Firestore está ativado.</small>
+      </div>`;
+    }
+  });
+</script>
+
+<script>
+let bets = [];
+let editingId = null;
+let deletingId = null;
+let bingoCount = 0;
+
+/* ── STORAGE (Firebase) ── */
+async function saveBets(){ /* não usado mais — cada aposta é salva individualmente */ }
+
+async function saveOneBet(bet){
+  try{
+    const { doc, setDoc } = window._firestoreFns;
+    await setDoc(doc(window._db, "copa_bets", bet.id), bet);
+  } catch(e){ console.error("Erro ao salvar aposta:", e); showToast("⚠️ Erro ao salvar"); }
+}
+
+async function deleteOneBet(id){
+  try{
+    const { doc, deleteDoc } = window._firestoreFns;
+    await deleteDoc(doc(window._db, "copa_bets", id));
+  } catch(e){ console.error("Erro ao excluir aposta:", e); showToast("⚠️ Erro ao excluir"); }
+}
+
+function loadBets(){ /* não usado — onSnapshot cuida disso */ }
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).substr(2,4); }
+
+/* ── TABS ── */
+let currentTab = 'pendentes';
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+tab));
+  renderAll();
+}
+
+/* ── RENDER ── */
+function getBetStatus(bet){
+  if(bet.status==='ganhou') return 'won';
+  if(bet.status==='perdeu') return 'lost';
+  if(bet.bingos && bet.bingos.length>0){
+    const checked = bet.bingos.filter(b=>b.checked).length;
+    if(checked>0 && checked<bet.bingos.length) return 'partial';
+  }
+  return 'pending';
+}
+
+function statusLabel(s){
+  if(s==='won') return '<span class="bet-status-pill status-won">✓ Ganhou</span>';
+  if(s==='lost') return '<span class="bet-status-pill status-lost">✗ Perdeu</span>';
+  if(s==='partial') return '<span class="bet-status-pill status-partial">⏳ Parcial</span>';
+  return '<span class="bet-status-pill status-pending">🔴 Em Jogo</span>';
+}
+
+function fmtDate(d){
+  if(!d) return '—';
+  const [y,m,day]=d.split('-');
+  return `${day}/${m}/${y}`;
+}
+function fmtMoney(v){
+  const n=parseFloat(v)||0;
+  return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function renderBet(bet){
+  const status = getBetStatus(bet);
+  const odd = parseFloat(bet.odd)||0;
+  const valor = parseFloat(bet.valor)||0;
+  const retorno = parseFloat(bet.retorno)||(odd*valor)||0;
+  const lucro = retorno - valor;
+  const hasBingos = bet.bingos && bet.bingos.length>0;
+  const checkedCount = hasBingos ? bet.bingos.filter(b=>b.checked).length : 0;
+  const totalBingos = hasBingos ? bet.bingos.length : 0;
+  const pct = totalBingos>0 ? Math.round(checkedCount/totalBingos*100) : 0;
+
+  let bingosHtml = '';
+  if(hasBingos){
+    bingosHtml = `<div class="bingos-title">📋 Eventos (${checkedCount}/${totalBingos} bateram)</div>
+    <div class="bet-progress"><div class="bet-progress-fill" style="width:${pct}%"></div></div>
+    <div class="bingo-list" style="margin-top:8px">
+    ${bet.bingos.map((b,i)=>`
+      <div class="bingo-item${b.checked?' checked':''}" onclick="toggleBingo('${bet.id}',${i})">
+        <div class="bingo-check">
+          <svg viewBox="0 0 12 12" fill="none"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+        </div>
+        <span class="bingo-text">${escHtml(b.text)}</span>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  const footerBtns = status==='pending'||status==='partial' ? `
+    <button class="btn-action btn-won" onclick="markBet('${bet.id}','ganhou')">🏆 Ganhou</button>
+    <button class="btn-action btn-lost" onclick="markBet('${bet.id}','perdeu')">❌ Perdeu</button>
+    <button class="btn-action btn-edit" onclick="editBet('${bet.id}')">✏️ Editar</button>
+    <button class="btn-action btn-delete" onclick="askDelete('${bet.id}')">🗑</button>` : `
+    <button class="btn-action btn-edit" onclick="editBet('${bet.id}')">✏️ Editar</button>
+    <button class="btn-action" onclick="markBet('${bet.id}','pendente')" style="border-color:#6b7280">↩ Reabrir</button>
+    <button class="btn-action btn-delete" onclick="askDelete('${bet.id}')">🗑</button>`;
+
+  return `<div class="bet-card" id="card-${bet.id}">
+    <div class="bet-card-header">
+      <div class="bet-meta">
+        <span class="bet-house">${escHtml(bet.casa||'—')}</span>
+        <span class="bet-date">📅 ${fmtDate(bet.data)}</span>
+      </div>
+      ${statusLabel(status)}
+    </div>
+    <div class="bet-card-body">
+      <div class="bet-desc">${escHtml(bet.desc||'Sem descrição')}</div>
+      ${bingosHtml}
+      <div class="bet-financials">
+        <div class="fin-box">
+          <div class="fin-label">Odd</div>
+          <div class="fin-val gold">${odd?odd.toFixed(2):'—'}</div>
+        </div>
+        <div class="fin-box">
+          <div class="fin-label">Apostado</div>
+          <div class="fin-val">${fmtMoney(valor)}</div>
+        </div>
+        <div class="fin-box">
+          <div class="fin-label">Retorno</div>
+          <div class="fin-val green">${fmtMoney(retorno)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="bet-card-footer">${footerBtns}</div>
+  </div>`;
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderAll(){
+  const filters = {
+    pendentes: b=>getBetStatus(b)==='pending'||getBetStatus(b)==='partial',
+    ganhas: b=>getBetStatus(b)==='won',
+    perdidas: b=>getBetStatus(b)==='lost',
+    todas: ()=>true
+  };
+  const tabs = ['pendentes','ganhas','perdidas','todas'];
+  tabs.forEach(tab=>{
+    const filtered = bets.filter(filters[tab]);
+    const el = document.getElementById('tab-'+tab);
+    if(!filtered.length){
+      const msgs = {
+        pendentes:'Nenhuma aposta em andamento',
+        ganhas:'Nenhuma aposta ganha ainda',
+        perdidas:'Nenhuma aposta perdida',
+        todas:'Nenhuma aposta cadastrada'
+      };
+      el.innerHTML=`<div class="empty"><div class="empty-ball">⚽</div><div class="empty-title">${msgs[tab]}</div><div class="empty-sub">Adicione uma aposta usando o botão ＋</div></div>`;
+    } else {
+      el.innerHTML = filtered.map(renderBet).join('');
+    }
+    const badge = document.getElementById('badge-'+tab);
+    if(badge) badge.textContent = filtered.length;
+  });
+  updateStats();
+}
+
+function updateStats(){
+  const total = bets.length;
+  const ganhas = bets.filter(b=>getBetStatus(b)==='won').length;
+  const perdidas = bets.filter(b=>getBetStatus(b)==='lost').length;
+  const pendentes = bets.filter(b=>getBetStatus(b)==='pending'||getBetStatus(b)==='partial').length;
+  const totalInvestido = bets.reduce((a,b)=>a+(parseFloat(b.valor)||0),0);
+  const totalRetorno = bets.filter(b=>getBetStatus(b)==='won').reduce((a,b)=>a+(parseFloat(b.retorno)||0),0);
+  const totalLost = bets.filter(b=>getBetStatus(b)==='lost').reduce((a,b)=>a+(parseFloat(b.valor)||0),0);
+  const saldo = totalRetorno - totalLost;
+  const roi = totalInvestido>0 ? Math.round(saldo/totalInvestido*100) : 0;
+
+  document.getElementById('h-total-bets').textContent = total;
+  document.getElementById('h-lucro').textContent = (saldo>=0?'+':'')+saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}).replace('R$\u00a0','R$ ');
+  document.getElementById('s-pendentes').textContent = pendentes;
+  document.getElementById('s-ganhas').textContent = ganhas;
+  document.getElementById('s-perdidas').textContent = perdidas;
+  const roiEl = document.getElementById('s-roi');
+  roiEl.textContent = roi+'%';
+  roiEl.style.color = roi>0?'#6ee7b7':roi<0?'#fca5a5':'#fff';
+}
+
+/* ── BINGO ── */
+function toggleBingo(id,idx){
+  const bet = bets.find(b=>b.id===id);
+  if(!bet||!bet.bingos) return;
+  bet.bingos[idx].checked = !bet.bingos[idx].checked;
+  saveOneBet(bet);
+  showToast(bet.bingos[idx].checked ? '✅ Evento marcado!' : '↩ Evento desmarcado');
+}
+
+/* ── STATUS ── */
+function markBet(id, status){
+  const bet = bets.find(b=>b.id===id);
+  if(!bet) return;
+  bet.status = status;
+  saveOneBet(bet);
+  if(status==='ganhou') showToast('🏆 Aposta marcada como ganha!');
+  else if(status==='perdeu') showToast('❌ Aposta marcada como perdida');
+  else showToast('↩ Aposta reaberta');
+}
+
+/* ── MODAL ── */
+function openModal(id){
+  editingId = id||null;
+  const m = document.getElementById('modal');
+  const ov = document.getElementById('modal-overlay');
+  document.getElementById('modal-title').textContent = id ? 'Editar Aposta ✏️' : 'Nova Aposta ⚽';
+  clearForm();
+  if(id){
+    const bet = bets.find(b=>b.id===id);
+    if(bet){
+      document.getElementById('f-casa').value = bet.casa||'';
+      document.getElementById('f-data').value = bet.data||'';
+      document.getElementById('f-desc').value = bet.desc||'';
+      document.getElementById('f-odd').value = bet.odd||'';
+      document.getElementById('f-valor').value = bet.valor||'';
+      document.getElementById('f-retorno').value = bet.retorno||'';
+      if(bet.bingos) bet.bingos.forEach(b=>addBingo(b.text));
+    }
+  } else {
+    // Default today's date
+    document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+    addBingo();
+  }
+  ov.classList.add('open');
+  document.getElementById('f-casa').focus();
+}
+function editBet(id){ openModal(id); }
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId=null;
+}
+function handleOverlayClick(e){
+  if(e.target===document.getElementById('modal-overlay')) closeModal();
+}
+
+/* ── FORM BINGO ── */
+function clearForm(){
+  ['f-casa','f-data','f-desc','f-odd','f-valor','f-retorno'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('bingo-builder').innerHTML='';
+  bingoCount=0;
+}
+function addBingo(txt){
+  const container = document.getElementById('bingo-builder');
+  const idx = bingoCount++;
+  const div = document.createElement('div');
+  div.className='bingo-entry';
+  div.id='bingo-row-'+idx;
+  div.innerHTML=`<input class="form-input" type="text" placeholder="Ex: Brasil marca primeiro..." value="${txt?escHtml(txt):''}"/><button class="btn-remove-bingo" onclick="removeBingo('bingo-row-${idx}')" title="Remover">✕</button>`;
+  container.appendChild(div);
+}
+function removeBingo(id){
+  const el = document.getElementById(id);
+  if(el) el.remove();
+}
+
+/* ── SAVE ── */
+function saveBet(){
+  const casa = document.getElementById('f-casa').value.trim();
+  const data = document.getElementById('f-data').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  const odd = parseFloat(document.getElementById('f-odd').value)||0;
+  const valor = parseFloat(document.getElementById('f-valor').value)||0;
+  const retorno = parseFloat(document.getElementById('f-retorno').value)||(odd*valor)||0;
+
+  if(!desc){ showToast('⚠️ Adicione uma descrição'); return; }
+  if(!casa){ showToast('⚠️ Informe a casa de apostas'); return; }
+
+  const bingos = [];
+  document.querySelectorAll('#bingo-builder .bingo-entry input').forEach(inp=>{
+    if(inp.value.trim()) bingos.push({text:inp.value.trim(),checked:false});
+  });
+
+  // Preserve bingo checked states on edit
+  if(editingId){
+    const old = bets.find(b=>b.id===editingId);
+    if(old&&old.bingos){
+      bingos.forEach(b=>{
+        const match = old.bingos.find(ob=>ob.text===b.text);
+        if(match) b.checked = match.checked;
+      });
+    }
+  }
+
+  if(editingId){
+    const idx = bets.findIndex(b=>b.id===editingId);
+    if(idx>-1){
+      bets[idx]={...bets[idx], casa, data, desc, odd, valor, retorno, bingos};
+      saveOneBet(bets[idx]);
+    }
+    showToast('✅ Aposta atualizada!');
+  } else {
+    const newBet = {id:genId(), casa, data, desc, odd, valor, retorno, bingos, status:'pendente', createdAt: Date.now()};
+    saveOneBet(newBet);
+    showToast('🎯 Aposta adicionada!');
+  }
+  closeModal();
+}
+
+/* ── DELETE ── */
+function askDelete(id){ deletingId=id; document.getElementById('confirm-modal').classList.add('open'); }
+function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); deletingId=null; }
+function executeDelete(){
+  if(!deletingId) return;
+  deleteOneBet(deletingId);
+  closeConfirm();
+  showToast('🗑️ Aposta removida');
+}
+
+/* ── AUTO CALC RETORNO ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  const odd = document.getElementById('f-odd');
+  const valor = document.getElementById('f-valor');
+  const ret = document.getElementById('f-retorno');
+  function calc(){ if(odd.value&&valor.value) ret.value=(parseFloat(odd.value)*parseFloat(valor.value)).toFixed(2); }
+  odd.addEventListener('input',calc);
+  valor.addEventListener('input',calc);
+});
+
+/* ── TOAST ── */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+/* ── INIT ── */
+renderAll(); // renderiza vazio enquanto Firebase carrega
+</script>
+</body>
+</html>
