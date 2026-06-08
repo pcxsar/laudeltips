@@ -267,7 +267,6 @@ function renderBet(bet, index){
       <div class="bet-meta">
         ${casaBadge(bet.casa,'bet-house')}
         <span class="bet-date">${fmtDate(bet.data)}</span>
-        ${lt ? '<span class="longt-badge">Longo Prazo</span>' : ''}
       </div>
       <div class="bet-header-end">
         ${statusLabel(status, lt)}
