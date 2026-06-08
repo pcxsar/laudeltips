@@ -126,6 +126,7 @@
       <button class="sd-close" onclick="closeSaldoDrawer()">✕</button>
     </div>
     <div class="sd-summary" id="sd-summary"></div>
+    <div class="sd-perf" id="sd-perf"></div>
     <div class="sd-body" id="sd-body"></div>
   </div>
 </div>
@@ -266,27 +267,6 @@
   <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </div>
 
-<!-- SETUP GUIDE -->
-<div id="setup-guide" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:1000;overflow-y:auto;padding:20px;font-family:'DM Sans',sans-serif;color:#fff;">
-  <div style="max-width:560px;margin:0 auto;padding:24px 0;">
-    <div style="font-family:'Anton',sans-serif;font-size:28px;color:#e8b94b;letter-spacing:3px;margin-bottom:4px;">⚙️ CONFIGURAÇÃO</div>
-    <p style="color:#9090b0;margin-bottom:24px;font-size:14px">Configure o Firebase para salvar as apostas na nuvem.</p>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div style="background:#0f0f1a;border:1px solid #232338;border-radius:12px;padding:16px;">
-        <div style="font-weight:700;margin-bottom:6px;color:#e8b94b">1. Crie o projeto Firebase</div>
-        <div style="font-size:13px;color:#9090b0;line-height:1.6">Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:#5b9cf6">console.firebase.google.com</a> → Adicionar projeto → dê um nome → Criar projeto</div>
-      </div>
-      <div style="background:#0f0f1a;border:1px solid #232338;border-radius:12px;padding:16px;">
-        <div style="font-weight:700;margin-bottom:6px;color:#e8b94b">2. Ative o Firestore</div>
-        <div style="font-size:13px;color:#9090b0;line-height:1.6">Menu lateral: Criação → Firestore Database → Criar banco de dados → Modo de teste → southamerica-east1 → Ativar</div>
-      </div>
-      <div style="background:#0f0f1a;border:1px solid #232338;border-radius:12px;padding:16px;">
-        <div style="font-weight:700;margin-bottom:6px;color:#e8b94b">3. Cole as credenciais no firebase.js</div>
-        <div style="font-size:13px;color:#9090b0;line-height:1.6">No arquivo <code style="background:#1c1c2e;padding:2px 6px;border-radius:4px">firebase.js</code>, localize o bloco <b>firebaseConfig</b> e substitua com os dados do seu projeto.</div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script type="module" src="firebase.js"></script>
 <script src="app.js"></script>

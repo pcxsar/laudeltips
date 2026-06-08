@@ -367,29 +367,64 @@ body::after{
 
 /* Card footer */
 .bet-card-footer{
-  display:flex;gap:6px;
+  display:flex;align-items:center;gap:8px;
   padding:10px 14px 12px 20px;
   border-top:1px solid var(--border);
   background:rgba(0,0,0,0.14);
 }
-.btn-action{
-  flex:1;padding:10px 6px;border-radius:var(--radius-xs);
-  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;letter-spacing:.2px;
-  border:1px solid var(--border2);background:var(--surface2);color:var(--text3);
-  cursor:pointer;transition:all .18s;
+.footer-main-btns{
+  display:flex;flex:1;gap:6px;min-width:0;
 }
-.btn-action:hover{background:var(--surface3);color:var(--text2);}
-.btn-action:active{transform:scale(0.97);}
-.btn-edit{border-color:rgba(240,192,64,0.22);color:var(--gold-dim);}
-.btn-edit:hover{background:rgba(240,192,64,0.09);color:var(--gold);border-color:rgba(240,192,64,0.48);}
-.btn-delete{border-color:rgba(255,61,90,0.18);color:var(--red-dim);}
-.btn-delete:hover{background:rgba(255,61,90,0.09);color:var(--red);border-color:rgba(255,61,90,0.42);}
-.btn-won{background:rgba(0,232,122,0.08);color:var(--green);border-color:rgba(0,232,122,0.26);}
-.btn-won:hover{background:rgba(0,232,122,0.16);box-shadow:0 0 16px rgba(0,232,122,0.14);}
-.btn-lost{background:rgba(255,61,90,0.08);color:var(--red);border-color:rgba(255,61,90,0.26);}
-.btn-lost:hover{background:rgba(255,61,90,0.16);box-shadow:0 0 16px rgba(255,61,90,0.14);}
-.btn-cashout{background:rgba(255,176,32,0.08);color:var(--amber);border-color:rgba(255,176,32,0.26);}
-.btn-cashout:hover{background:rgba(255,176,32,0.16);box-shadow:0 0 16px rgba(255,176,32,0.14);}
+.footer-icon-btns{
+  display:flex;gap:5px;flex-shrink:0;
+}
+/* Result buttons: GREEN / RED / CASHOUT */
+.btn-result{
+  flex:1;padding:12px 8px;border-radius:var(--radius-xs);
+  font-family:'Anton',sans-serif;font-size:15px;letter-spacing:1.2px;
+  border:2px solid transparent;background:transparent;
+  cursor:pointer;transition:all .18s;text-align:center;
+}
+.btn-result:active{transform:scale(0.96);}
+.btn-won{
+  color:var(--green);
+  border-color:rgba(0,232,122,0.4);
+  background:rgba(0,232,122,0.08);
+  text-shadow:0 0 18px rgba(0,232,122,0.5);
+}
+.btn-won:hover{background:rgba(0,232,122,0.18);box-shadow:0 0 20px rgba(0,232,122,0.2);border-color:rgba(0,232,122,0.7);}
+.btn-lost{
+  color:var(--red);
+  border-color:rgba(255,61,90,0.4);
+  background:rgba(255,61,90,0.08);
+  text-shadow:0 0 18px rgba(255,61,90,0.5);
+}
+.btn-lost:hover{background:rgba(255,61,90,0.18);box-shadow:0 0 20px rgba(255,61,90,0.2);border-color:rgba(255,61,90,0.7);}
+.btn-cashout{
+  color:var(--amber);
+  border-color:rgba(255,176,32,0.4);
+  background:rgba(255,176,32,0.08);
+  text-shadow:0 0 18px rgba(255,176,32,0.4);
+}
+.btn-cashout:hover{background:rgba(255,176,32,0.18);box-shadow:0 0 20px rgba(255,176,32,0.2);border-color:rgba(255,176,32,0.7);}
+.btn-reopen{
+  color:var(--text3);
+  border-color:var(--border2);
+  background:var(--surface2);
+}
+.btn-reopen:hover{background:var(--surface3);color:var(--text2);}
+/* Icon-only buttons: edit / delete */
+.btn-icon{
+  width:36px;height:36px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-xs);
+  border:1px solid var(--border2);background:var(--surface2);
+  cursor:pointer;transition:all .18s;font-size:15px;line-height:1;
+  opacity:0.6;
+}
+.btn-icon:hover{opacity:1;background:var(--surface3);}
+.btn-icon:active{transform:scale(0.93);}
+.btn-icon.btn-delete:hover{background:rgba(255,61,90,0.1);border-color:rgba(255,61,90,0.35);}
 
 /* Longt */
 .longt-meta{display:flex;align-items:center;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
@@ -448,7 +483,7 @@ body::after{
   border-radius:var(--radius-sm);color:var(--text);
   font-family:'DM Sans',sans-serif;font-size:14px;
   outline:none;transition:border-color .18s,box-shadow .18s,background .18s;
-  -webkit-appearance:none;
+  -webkit-appearance:none;appearance:none;
 }
 .form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(240,192,64,0.12);background:var(--surface3);}
 .form-input::placeholder{color:var(--text3);}
@@ -633,6 +668,15 @@ body::after{
 .sd-sum-val.neutral{color:var(--gold);}
 .sd-sum-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:6px;font-family:'Space Mono',monospace;}
 
+.sd-perf{display:flex;align-items:stretch;border-bottom:1px solid var(--border);}
+.sd-perf-cell{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 16px;gap:4px;text-align:center;}
+.sd-perf-divider{width:1px;background:var(--border);margin:12px 0;}
+.sd-perf-lbl{font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
+.sd-perf-val{font-family:'Anton',sans-serif;font-size:28px;line-height:1;letter-spacing:.5px;color:var(--text2);}
+.sd-perf-val.positive{color:var(--green);text-shadow:0 0 20px rgba(0,232,122,0.25);}
+.sd-perf-val.negative{color:var(--red);text-shadow:0 0 20px rgba(255,61,90,0.25);}
+.sd-perf-sub{font-size:10px;color:var(--text3);font-family:'DM Sans',sans-serif;}
+
 .sd-body{padding:18px;}
 .sd-section-title{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
 .sd-section-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border2),transparent);}
@@ -686,6 +730,11 @@ body::after{
 .sd-running-val.negative{color:var(--red);}
 .sd-running-val.zero{color:var(--text2);}
 
+/* Saldo chart */
+.saldo-chart-wrap{margin:0 -18px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.12);}
+.saldo-chart-svg{width:100%;height:150px;display:block;}
+.chart-empty-msg{text-align:center;padding:24px 16px;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:.5px;}
+
 /* Cashout modal */
 .cashout-preview{margin-bottom:16px;padding:14px 16px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:space-between;}
 .cashout-preview.profit{background:rgba(0,232,122,0.07);border:1px solid rgba(0,232,122,0.18);color:var(--green);}
@@ -701,7 +750,8 @@ body::after{
   .fin-val{font-size:14px;}
   .bet-card-body{padding:14px 14px 12px 20px;}
   .bet-card-footer{padding:9px 12px 11px 18px;gap:5px;}
-  .btn-action{font-size:11px;padding:9px 4px;}
+  .btn-result{font-size:13px;padding:10px 6px;}
+  .btn-icon{width:32px;height:32px;font-size:14px;}
 }
 @media(min-width:520px){
   .main{padding:24px 20px 0;}

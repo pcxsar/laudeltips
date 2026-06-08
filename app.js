@@ -184,14 +184,22 @@ function renderBet(bet, index){
   }
 
   const footerBtns = status==='pending'||status==='partial' ? `
-    <button class="btn-action btn-won" onclick="markBet('${bet.id}','ganhou')">🏆 Ganhou</button>
-    <button class="btn-action btn-lost" onclick="markBet('${bet.id}','perdeu')">💀 Perdeu</button>
-    <button class="btn-action btn-cashout" onclick="openCashout('${bet.id}')">💰</button>
-    <button class="btn-action btn-edit" onclick="editBet('${bet.id}')">✏️</button>
-    <button class="btn-action btn-delete" onclick="askDelete('${bet.id}')">🗑</button>` : `
-    <button class="btn-action btn-edit" onclick="editBet('${bet.id}')">✏️ Editar</button>
-    <button class="btn-action" onclick="markBet('${bet.id}','pendente')">↩ Reabrir</button>
-    <button class="btn-action btn-delete" onclick="askDelete('${bet.id}')">🗑</button>`;
+    <div class="footer-main-btns">
+      <button class="btn-result btn-won" onclick="markBet('${bet.id}','ganhou')">GREEN</button>
+      <button class="btn-result btn-lost" onclick="markBet('${bet.id}','perdeu')">RED</button>
+      <button class="btn-result btn-cashout" onclick="openCashout('${bet.id}')">CASHOUT</button>
+    </div>
+    <div class="footer-icon-btns">
+      <button class="btn-icon btn-edit" onclick="editBet('${bet.id}')" title="Editar">✏️</button>
+      <button class="btn-icon btn-delete" onclick="askDelete('${bet.id}')" title="Excluir">🗑</button>
+    </div>` : `
+    <div class="footer-main-btns">
+      <button class="btn-result btn-reopen" onclick="markBet('${bet.id}','pendente')">↩ Reabrir</button>
+    </div>
+    <div class="footer-icon-btns">
+      <button class="btn-icon btn-edit" onclick="editBet('${bet.id}')" title="Editar">✏️</button>
+      <button class="btn-icon btn-delete" onclick="askDelete('${bet.id}')" title="Excluir">🗑</button>
+    </div>`;
 
   const delay = Math.min((index||0) * 0.055, 0.35);
   return `<div class="${cardClass}" id="card-${bet.id}" style="animation-delay:${delay}s">
@@ -283,6 +291,76 @@ function updateStats(){
   document.getElementById('s-longterm').textContent = longtermPending;
   document.getElementById('s-ganhas').textContent = ganhas;
   document.getElementById('s-perdidas').textContent = perdidas;
+
+}
+
+/* ── SALDO CHART ── */
+function renderSaldoChart(points){
+  if(!points||!points.length) return '<div class="chart-empty-msg">Adicione apostas finalizadas para ver o gráfico</div>';
+
+  const W=560,H=165;
+  const pad={t:14,r:14,b:26,l:58};
+  const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+  const uid=Math.random().toString(36).substr(2,5);
+
+  const allVals=[0,...points.map(p=>p.value)];
+  const rawMin=Math.min(...allVals), rawMax=Math.max(...allVals);
+  const span=(rawMax-rawMin)||10;
+  const minV=rawMin-span*0.08, maxV=rawMax+span*0.08;
+  const vRange=maxV-minV;
+
+  const sy=v=>+(pad.t+(1-(v-minV)/vRange)*iH).toFixed(1);
+  const sx=i=>+(pad.l+(i/points.length)*iW).toFixed(1);
+
+  const allPts=[{value:0},...points];
+  const coords=allPts.map((p,i)=>[sx(i),sy(p.value)]);
+  const zeroY=sy(0);
+
+  const linePts=coords.map(([x,y],i)=>`${i===0?'M':'L'}${x} ${y}`).join(' ');
+  const areaD=linePts+` L${coords[coords.length-1][0]} ${H+20} L${coords[0][0]} ${H+20} Z`;
+
+  const fmtY=v=>{
+    if(v===0) return 'R$0';
+    const a=Math.abs(v), s=a>=1000?(a/1000).toFixed(1).replace('.0','')+'k':a.toFixed(0);
+    return (v>0?'+':'-')+'R$'+s;
+  };
+
+  const yVals=[...new Set([rawMin,0,rawMax])];
+  const yLbls=yVals.map(v=>{
+    const y=sy(v), isZ=v===0;
+    const clr=isZ?'rgba(255,255,255,0.4)':v>0?'rgba(0,232,122,0.65)':'rgba(255,61,90,0.65)';
+    return `<line x1="${pad.l}" y1="${y}" x2="${pad.l+iW}" y2="${y}" stroke="${isZ?'rgba(255,255,255,0.14)':'rgba(255,255,255,0.05)'}" stroke-width="1"${isZ?' stroke-dasharray="4 3"':''}/>
+    <text x="${pad.l-7}" y="${y}" dy="4" text-anchor="end" font-size="9" fill="${clr}" font-family="Space Mono,monospace">${fmtY(v)}</text>`;
+  });
+
+  const dotEls=points.map((p,i)=>{
+    const[x,y]=coords[i+1];
+    const clr=p.value>0?'#00e87a':p.value<0?'#ff3d5a':'rgba(255,255,255,0.4)';
+    const valStr=(p.value>=0?'+':'')+p.value.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    return `<circle cx="${x}" cy="${y}" r="3.5" fill="${clr}" stroke="#09091a" stroke-width="1.5"><title>${p.date}: ${valStr}</title></circle>`;
+  });
+
+  const xLbls=[];
+  if(points.length>=1){
+    xLbls.push(`<text x="${coords[1][0]}" y="${H-3}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.28)" font-family="Space Mono,monospace">${points[0].date}</text>`);
+    if(points.length>1) xLbls.push(`<text x="${coords[coords.length-1][0]}" y="${H-3}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.28)" font-family="Space Mono,monospace">${points[points.length-1].date}</text>`);
+  }
+
+  return `<div class="saldo-chart-wrap">
+  <svg class="saldo-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <defs>
+      <clipPath id="ca${uid}"><rect x="${pad.l}" y="${pad.t}" width="${iW}" height="${Math.max(0,zeroY-pad.t)}"/></clipPath>
+      <clipPath id="cb${uid}"><rect x="${pad.l}" y="${zeroY}" width="${iW}" height="${Math.max(0,H-pad.b-zeroY)}"/></clipPath>
+    </defs>
+    ${yLbls.join('\n    ')}
+    <path d="${areaD}" fill="rgba(0,232,122,0.1)" clip-path="url(#ca${uid})"/>
+    <path d="${areaD}" fill="rgba(255,61,90,0.1)" clip-path="url(#cb${uid})"/>
+    <path d="${linePts}" fill="none" stroke="#00e87a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#ca${uid})"/>
+    <path d="${linePts}" fill="none" stroke="#ff3d5a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#cb${uid})"/>
+    ${dotEls.join('\n    ')}
+    ${xLbls.join('\n    ')}
+  </svg>
+</div>`;
 }
 
 /* ── SALDO DRAWER ── */
@@ -327,26 +405,61 @@ function openSaldoDrawer(){
     </div>
   `;
 
-  let bodyHtml = `<div class="sd-section-title">Apostas Finalizadas</div>`;
+  const ganhasCount = bets.filter(b=>getBetStatus(b)==='won'||(getBetStatus(b)==='cashout'&&(parseFloat(b.cashoutValue)||0)>(parseFloat(b.valor)||0))).length;
+  const perdidasCount = bets.filter(b=>getBetStatus(b)==='lost'||(getBetStatus(b)==='cashout'&&(parseFloat(b.cashoutValue)||0)<=(parseFloat(b.valor)||0))).length;
+  const finCnt = ganhasCount + perdidasCount;
+  const taxa = finCnt > 0 ? Math.round(ganhasCount / finCnt * 100) : null;
+  const taxaStr = taxa !== null ? taxa+'%' : '—';
+  const taxaClass = taxa !== null ? (taxa >= 50 ? 'positive' : 'negative') : 'neutral';
+
+  const finalBets = bets.filter(b=>{ const s=getBetStatus(b); return s==='won'||s==='lost'||s==='cashout'; });
+  const totalInv = finalBets.reduce((a,b)=>a+(parseFloat(b.valor)||0), 0);
+  const profitFin = finalBets.reduce((a,b)=>{
+    const s=getBetStatus(b),v=parseFloat(b.valor)||0,r=parseFloat(b.retorno)||0,cv=parseFloat(b.cashoutValue)||0;
+    if(s==='won') return a+(r-v); if(s==='cashout') return a+(cv-v); return a-v;
+  }, 0);
+  const roi = totalInv > 0 ? profitFin/totalInv*100 : null;
+  const roiStr = roi !== null ? (roi>=0?'+':'')+roi.toFixed(1)+'%' : '—';
+  const roiClass = roi !== null ? (roi > 0 ? 'positive' : roi < 0 ? 'negative' : 'neutral') : 'neutral';
+
+  document.getElementById('sd-perf').innerHTML = `
+    <div class="sd-perf-cell">
+      <div class="sd-perf-lbl">Taxa de Acerto</div>
+      <div class="sd-perf-val ${taxaClass}">${taxaStr}</div>
+      <div class="sd-perf-sub">${finCnt > 0 ? ganhasCount+' de '+finCnt+' finalizadas' : 'Sem apostas finalizadas'}</div>
+    </div>
+    <div class="sd-perf-divider"></div>
+    <div class="sd-perf-cell">
+      <div class="sd-perf-lbl">ROI</div>
+      <div class="sd-perf-val ${roiClass}">${roiStr}</div>
+      <div class="sd-perf-sub">${totalInv > 0 ? 'investido: '+fmtMoney(totalInv) : 'Sem apostas finalizadas'}</div>
+    </div>
+  `;
+
+  // Build chronological running balance for chart + bet rows
+  const ordered = [...finalizadas].reverse();
+  let running = 0;
+  const runningMap = {};
+  const chartPoints = [];
+  ordered.forEach(b => {
+    const status = getBetStatus(b);
+    if(status==='won'){
+      running += (parseFloat(b.retorno)||0) - (parseFloat(b.valor)||0);
+    } else if(status==='cashout'){
+      running += (parseFloat(b.cashoutValue)||0) - (parseFloat(b.valor)||0);
+    } else {
+      running -= (parseFloat(b.valor)||0);
+    }
+    runningMap[b.id] = running;
+    chartPoints.push({ value: running, date: fmtDate(b.data) });
+  });
+
+  let bodyHtml = renderSaldoChart(chartPoints);
+  bodyHtml += `<div class="sd-section-title">Apostas Finalizadas</div>`;
 
   if(!finalizadas.length){
     bodyHtml += `<div class="sd-empty"><div class="sd-empty-icon">📋</div>Nenhuma aposta finalizada ainda</div>`;
   } else {
-    const ordered = [...finalizadas].reverse();
-    let running = 0;
-    const runningMap = {};
-    ordered.forEach(b => {
-      const status = getBetStatus(b);
-      if(status==='won'){
-        running += (parseFloat(b.retorno)||0) - (parseFloat(b.valor)||0);
-      } else if(status==='cashout'){
-        running += (parseFloat(b.cashoutValue)||0) - (parseFloat(b.valor)||0);
-      } else {
-        running -= (parseFloat(b.valor)||0);
-      }
-      runningMap[b.id] = running;
-    });
-
     finalizadas.forEach(bet => {
       const status = getBetStatus(bet);
       const isWon = status === 'won';
