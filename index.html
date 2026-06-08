@@ -17,10 +17,6 @@
       <div class="logo-dot"></div>
     </div>
     <div class="header-right">
-      <div class="hstat">
-        <div class="hstat-val" id="h-total-bets">0</div>
-        <div class="hstat-label">Apostas</div>
-      </div>
       <div class="saldo-btn" onclick="openSaldoDrawer()" title="Ver histórico de saldo">
         <div class="hstat-val" id="h-lucro">R$ 0</div>
         <div class="hstat-label">Saldo</div>
@@ -252,6 +248,17 @@
       <div id="cashout-preview"></div>
       <button class="btn-save" onclick="confirmCashout()" style="background:linear-gradient(135deg,#ffca50,var(--amber));box-shadow:0 4px 20px rgba(255,176,32,0.3);">CONFIRMAR CASHOUT</button>
     </div>
+  </div>
+</div>
+
+<!-- GREEN CELEBRATION -->
+<div id="green-celebration" class="green-celebration" onclick="dismissCelebration()">
+  <div class="gc-bg"></div>
+  <canvas id="gc-canvas" class="gc-canvas"></canvas>
+  <div class="gc-content">
+    <div class="gc-trophy">🏆</div>
+    <div class="gc-label">GREEN!</div>
+    <div class="gc-sub">Aposta Vencida!</div>
   </div>
 </div>
 

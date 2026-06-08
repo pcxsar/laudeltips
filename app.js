@@ -1,10 +1,16 @@
 let bets = [];
 let editingId = null;
+let _suppressRenderUntil = 0;
 let deletingId = null;
 let bingoCount = 0;
 let selectedBetType = 'normal';
 let selectedCasa = '';
 let currentProfile = 'laudel';
+
+const expandedCards = new Set();
+let _customOrder = [];
+let _drag = null;
+let _pressTimer = null;
 
 const PROFILE_LABELS = {
   laudel: 'Laudel Conjunto',
@@ -18,9 +24,36 @@ const PROFILE_COLORS = {
 };
 
 /* ── PROFILE SWITCHER ── */
+function loadBetOrder(){
+  try { return JSON.parse(localStorage.getItem('betOrder_'+currentProfile)||'[]'); } catch{ return []; }
+}
+function saveBetOrder(order){
+  localStorage.setItem('betOrder_'+currentProfile, JSON.stringify(order));
+}
+function applyCustomOrder(betsArr){
+  let order = loadBetOrder();
+  if(!order.length) return betsArr;
+  const newIds = betsArr.map(b=>b.id).filter(id=>!order.includes(id));
+  if(newIds.length){ order = [...order, ...newIds]; saveBetOrder(order); }
+  return [...betsArr].sort((a,b)=>{
+    const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
+    return (ai===-1?9999:ai) - (bi===-1?9999:bi);
+  });
+}
+function updateOrderAfterDrag(newIds){
+  const order = loadBetOrder();
+  const existPositions = newIds.map(id=>order.indexOf(id)).filter(i=>i>=0).sort((a,b)=>a-b);
+  const newOrder = [...order];
+  existPositions.forEach((pos,i)=>{ newOrder[pos] = newIds[i]; });
+  newIds.forEach(id=>{ if(!newOrder.includes(id)) newOrder.push(id); });
+  _customOrder = newOrder;
+  saveBetOrder(newOrder);
+}
+
 function switchProfile(profile){
   if(profile === currentProfile) return;
   currentProfile = profile;
+  _customOrder = loadBetOrder();
   ['laudel','paulo','hammel'].forEach(p => {
     const btn = document.getElementById('pbtn-'+p);
     btn.className = 'profile-btn' + (p === profile ? ' active-'+p : '');
@@ -201,42 +234,207 @@ function renderBet(bet, index){
       <button class="btn-icon btn-delete" onclick="askDelete('${bet.id}')" title="Excluir">🗑</button>
     </div>`;
 
-  const delay = Math.min((index||0) * 0.055, 0.35);
-  return `<div class="${cardClass}" id="card-${bet.id}" style="animation-delay:${delay}s">
-    <div class="bet-card-header">
+  const isExpanded = expandedCards.has(bet.id);
+  const chevron = `<div class="card-chevron${isExpanded?' open':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6,9 12,15 18,9"/></svg></div>`;
+
+  const alreadyInDom = !!document.getElementById('card-'+bet.id);
+  const delay = alreadyInDom ? 0 : Math.min((index||0) * 0.055, 0.35);
+  const animStyle = alreadyInDom ? 'animation:none' : `animation-delay:${delay}s`;
+
+  const bodyHtml = isExpanded ? `
+    <div class="bet-card-body bet-body-animated">
+      ${longtHtml}
+      <div class="bet-desc">${escHtml(bet.desc||'Sem descrição')}</div>
+      ${bingosHtml}
+      <div class="bet-financials">
+        <div class="fin-box"><div class="fin-label">Odd</div><div class="fin-val gold">${odd?odd.toFixed(2):'—'}</div></div>
+        <div class="fin-box"><div class="fin-label">Apostado</div><div class="fin-val">${fmtMoney(valor)}</div></div>
+        <div class="fin-box"><div class="fin-label">${status==='cashout'?'Cashout':'Retorno'}</div><div class="fin-val ${status==='cashout'?(cashoutValue>=valor?'green':'red'):'green'}">${status==='cashout'?fmtMoney(cashoutValue):fmtMoney(retorno)}</div></div>
+      </div>
+    </div>` : `
+    <div class="bet-card-compact">
+      <div class="bet-compact-desc">${escHtml(bet.desc||'Sem descrição')}</div>
+      <div class="bet-compact-nums">
+        <span class="cn-odd">@ ${odd?odd.toFixed(2):'—'}</span>
+        <span class="cn-sep">·</span>
+        <span class="cn-val">${fmtMoney(valor)}</span>
+        ${hasBingos?`<span class="cn-sep">·</span><span class="cn-bingo">${checkedCount}/${totalBingos} ✓</span>`:''}
+      </div>
+    </div>`;
+
+  return `<div class="${cardClass}" id="card-${bet.id}" style="${animStyle}">
+    <div class="bet-card-header" onclick="toggleCardExpand('${bet.id}')">
       <div class="bet-meta">
         ${casaBadge(bet.casa,'bet-house')}
         <span class="bet-date">${fmtDate(bet.data)}</span>
         ${lt ? '<span class="longt-badge">Longo Prazo</span>' : ''}
       </div>
-      ${statusLabel(status, lt)}
-    </div>
-    <div class="bet-card-body">
-      ${longtHtml}
-      <div class="bet-desc">${escHtml(bet.desc||'Sem descrição')}</div>
-      ${bingosHtml}
-      <div class="bet-financials">
-        <div class="fin-box">
-          <div class="fin-label">Odd</div>
-          <div class="fin-val gold">${odd?odd.toFixed(2):'—'}</div>
-        </div>
-        <div class="fin-box">
-          <div class="fin-label">Apostado</div>
-          <div class="fin-val">${fmtMoney(valor)}</div>
-        </div>
-        <div class="fin-box">
-          <div class="fin-label">${status==='cashout'?'Cashout':'Retorno'}</div>
-          <div class="fin-val ${status==='cashout'?(cashoutValue>=valor?'green':'red'):'green'}">${status==='cashout'?fmtMoney(cashoutValue):fmtMoney(retorno)}</div>
-        </div>
+      <div class="bet-header-end">
+        ${statusLabel(status, lt)}
+        ${chevron}
       </div>
     </div>
+    ${bodyHtml}
     <div class="bet-card-footer">${footerBtns}</div>
   </div>`;
 }
 
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+function toggleCardExpand(id){
+  if(expandedCards.has(id)) expandedCards.delete(id);
+  else expandedCards.add(id);
+  const bet = bets.find(b=>b.id===id);
+  if(!bet) return;
+  const card = document.getElementById('card-'+id);
+  if(!card) return;
+  const siblings = [...card.parentElement.querySelectorAll('.bet-card')];
+  const idx = siblings.indexOf(card);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderBet(bet, idx);
+  card.replaceWith(tmp.firstElementChild);
+}
+
+/* ── MICRO-ANIMATIONS ── */
+function animateSaldo(el, toValue, duration=700){
+  if(!el) return;
+  const fromValue = parseFloat(el.dataset.saldoVal)||0;
+  el.dataset.saldoVal = toValue;
+  if(Math.abs(fromValue-toValue)<0.005){
+    const fv = Math.abs(toValue).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    el.textContent = (toValue>=0?'+':'-')+' R$ '+fv;
+    el.className = 'hstat-val'+(toValue>0?' positive':toValue<0?' negative':'');
+    return;
+  }
+  const start = performance.now();
+  function tick(now){
+    const p = Math.min((now-start)/duration, 1);
+    const ease = 1-Math.pow(1-p,3);
+    const val = fromValue+(toValue-fromValue)*ease;
+    const fv = Math.abs(val).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    el.textContent = (val>=0?'+':'-')+' R$ '+fv;
+    el.className = 'hstat-val'+(toValue>0?' positive':toValue<0?' negative':'');
+    if(p<1) requestAnimationFrame(tick);
+    else {
+      const ff = Math.abs(toValue).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      el.textContent = (toValue>=0?'+':'-')+' R$ '+ff;
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function animateCounter(el, to, duration=520){
+  if(!el) return;
+  const from = parseFloat(el.dataset.animVal)||0;
+  el.dataset.animVal = to;
+  if(from === to) return;
+  const start = performance.now();
+  function tick(now){
+    const p = Math.min((now-start)/duration, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(from + (to-from)*ease);
+    if(p < 1) requestAnimationFrame(tick);
+    else el.textContent = to;
+  }
+  requestAnimationFrame(tick);
+}
+
+function bumpScoreVal(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('score-bump');
+  void el.offsetWidth;
+  el.classList.add('score-bump');
+  el.addEventListener('animationend', ()=>el.classList.remove('score-bump'), {once:true});
+}
+
+function spawnBingoConfetti(cx, cy){
+  const colors = ['#00e87a','#b4ffde','#e8b94b','#4f8ef7','#a78bfa','#ffb020'];
+  for(let i=0; i<18; i++){
+    const dot = document.createElement('div');
+    dot.className = 'confetti-dot';
+    const angle = (i/18)*360 + Math.random()*20;
+    const dist = 20 + Math.random()*32;
+    const size = 3 + Math.random()*5;
+    dot.style.cssText = `left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:${colors[i%colors.length]};--dx:${(Math.cos(angle*Math.PI/180)*dist).toFixed(1)}px;--dy:${(Math.sin(angle*Math.PI/180)*dist).toFixed(1)}px;`;
+    document.body.appendChild(dot);
+    setTimeout(()=>dot.remove(), 750);
+  }
+}
+
+/* ── GREEN CELEBRATION ── */
+let _gcTimer = null;
+let _gcRaf = null;
+
+function showGreenCelebration(){
+  const cel = document.getElementById('green-celebration');
+  const canvas = document.getElementById('gc-canvas');
+  cel.classList.remove('active');
+  void cel.offsetWidth;
+  cel.classList.add('active');
+
+  // Canvas confetti
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const colors = ['#00e87a','#b4ffde','#e8b94b','#4f8ef7','#a78bfa','#ffb020','#00c95a','#ffffff'];
+  const particles = Array.from({length:90}, ()=>({
+    x: Math.random() * canvas.width,
+    y: -10 - Math.random() * 60,
+    w: 4 + Math.random() * 9,
+    h: 4 + Math.random() * (Math.random()>.5 ? 4 : 12),
+    color: colors[Math.floor(Math.random()*colors.length)],
+    vx: (Math.random()-.5) * 3.5,
+    vy: 3 + Math.random() * 4.5,
+    rot: Math.random()*360,
+    vr: (Math.random()-.5)*8,
+    alpha: 1,
+    isRect: Math.random()>.45,
+  }));
+
+  if(_gcRaf) cancelAnimationFrame(_gcRaf);
+  const startTime = performance.now();
+  function draw(now){
+    const t = (now - startTime) / 1000;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p=>{
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      p.vy += 0.08; // gravity
+      p.alpha = Math.max(0, 1 - Math.max(0, t - 1.8) * 1.2);
+      if(p.y < canvas.height + 20) alive = true;
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI/180);
+      ctx.fillStyle = p.color;
+      if(p.isRect){
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.w/2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+    if(alive && t < 3.2) _gcRaf = requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  _gcRaf = requestAnimationFrame(draw);
+
+  if(_gcTimer) clearTimeout(_gcTimer);
+  _gcTimer = setTimeout(()=>cel.classList.remove('active'), 3000);
+}
+
+function dismissCelebration(){
+  const cel = document.getElementById('green-celebration');
+  cel.classList.remove('active');
+  if(_gcTimer) clearTimeout(_gcTimer);
+  if(_gcRaf){ cancelAnimationFrame(_gcRaf); _gcRaf = null; }
+}
+
 function renderAll(){
+  if(Date.now() < _suppressRenderUntil) return;
   const filters = {
     emjogo:     b=>!isLongTerm(b) && (getBetStatus(b)==='pending'||getBetStatus(b)==='partial'),
     longoprazo: b=>isLongTerm(b)  && (getBetStatus(b)==='pending'||getBetStatus(b)==='partial'),
@@ -253,7 +451,7 @@ function renderAll(){
   };
   const tabs = ['emjogo','longoprazo','ganhas','perdidas','todas'];
   tabs.forEach(tab=>{
-    const filtered = bets.filter(filters[tab]);
+    const filtered = applyCustomOrder(bets.filter(filters[tab]));
     const el = document.getElementById('tab-'+tab);
     if(!filtered.length){
       el.innerHTML=`<div class="empty"><div class="empty-icon">⚽</div><div class="empty-title">${emptyMsgs[tab]}</div><div class="empty-sub">Adicione uma aposta usando o botão +</div></div>`;
@@ -267,7 +465,6 @@ function renderAll(){
 }
 
 function updateStats(){
-  const total = bets.length;
   const ganhas = bets.filter(b=>getBetStatus(b)==='won' || (getBetStatus(b)==='cashout' && (parseFloat(b.cashoutValue)||0) > (parseFloat(b.valor)||0))).length;
   const perdidas = bets.filter(b=>getBetStatus(b)==='lost' || (getBetStatus(b)==='cashout' && (parseFloat(b.cashoutValue)||0) <= (parseFloat(b.valor)||0))).length;
   const pendentes = bets.filter(b=>!isLongTerm(b)&&(getBetStatus(b)==='pending'||getBetStatus(b)==='partial')).length;
@@ -282,15 +479,11 @@ function updateStats(){
     return acc - valor;
   },0);
 
-  const lucroEl = document.getElementById('h-lucro');
-  lucroEl.textContent = (saldo>=0?'+':'')+saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}).replace('R$ ','R$ ');
-  lucroEl.className = 'hstat-val' + (saldo>0?' positive':saldo<0?' negative':'');
-
-  document.getElementById('h-total-bets').textContent = total;
-  document.getElementById('s-pendentes').textContent = pendentes;
-  document.getElementById('s-longterm').textContent = longtermPending;
-  document.getElementById('s-ganhas').textContent = ganhas;
-  document.getElementById('s-perdidas').textContent = perdidas;
+  animateSaldo(document.getElementById('h-lucro'), saldo);
+  animateCounter(document.getElementById('s-pendentes'), pendentes);
+  animateCounter(document.getElementById('s-longterm'), longtermPending);
+  animateCounter(document.getElementById('s-ganhas'), ganhas);
+  animateCounter(document.getElementById('s-perdidas'), perdidas);
 
 }
 
@@ -534,21 +727,65 @@ function handleSaldoOverlay(e){
 function toggleBingo(id,idx){
   const bet = bets.find(b=>b.id===id);
   if(!bet||!bet.bingos) return;
-  bet.bingos[idx].checked = !bet.bingos[idx].checked;
+
+  const newChecked = !bet.bingos[idx].checked;
+  bet.bingos[idx].checked = newChecked;
+
+  // Update DOM directly — no full re-render
+  const card = document.getElementById('card-'+id);
+  if(card){
+    const items = card.querySelectorAll('.bingo-item');
+    const item = items[idx];
+    if(item){
+      item.classList.toggle('checked', newChecked);
+      if(newChecked){
+        const checkEl = item.querySelector('.bingo-check');
+        if(checkEl){
+          const r = checkEl.getBoundingClientRect();
+          spawnBingoConfetti(r.left + r.width/2, r.top + r.height/2);
+        }
+      }
+    }
+    const checkedCnt = bet.bingos.filter(b=>b.checked).length;
+    const total = bet.bingos.length;
+    const pct = total > 0 ? Math.round(checkedCnt/total*100) : 0;
+    const fill = card.querySelector('.bet-progress-fill');
+    if(fill) fill.style.width = pct+'%';
+    const title = card.querySelector('.bingos-title');
+    if(title) title.textContent = `Eventos (${checkedCnt}/${total} bateram)`;
+  }
+
+  // Suppress Firebase-triggered re-render (roundtrip ~800ms)
+  _suppressRenderUntil = Date.now() + 1500;
   saveOneBet(bet);
-  showToast(bet.bingos[idx].checked ? '✅ Evento marcado!' : '↩ Evento desmarcado');
+  showToast(newChecked ? '✅ Evento marcado!' : '↩ Evento desmarcado');
 }
 
 /* ── STATUS ── */
 function markBet(id, status){
   const bet = bets.find(b=>b.id===id);
   if(!bet) return;
+
   bet.status = status;
   if(status==='pendente') bet.cashoutValue = null;
+
+  // Render imediato na memória — não espera Firebase confirmar
+  _suppressRenderUntil = 0;
+  renderAll();
+
+  const cardEl = document.getElementById('card-'+id);
   saveOneBet(bet);
-  if(status==='ganhou') showToast('🏆 Aposta marcada como ganha!');
-  else if(status==='perdeu') showToast('💀 Aposta marcada como perdida');
-  else showToast('↩ Aposta reaberta');
+
+  if(status==='ganhou'){
+    showGreenCelebration();
+    setTimeout(()=>bumpScoreVal('s-ganhas'), 400);
+  } else if(status==='perdeu'){
+    if(cardEl){ cardEl.classList.add('flash-lost'); setTimeout(()=>cardEl.classList.remove('flash-lost'),800); }
+    showToast('💀 Aposta marcada como perdida');
+    setTimeout(()=>bumpScoreVal('s-perdidas'), 300);
+  } else {
+    showToast('↩ Aposta reaberta');
+  }
 }
 
 /* ── MODAL ── */
@@ -580,11 +817,13 @@ function openModal(id){
     addBingo();
   }
   ov.classList.add('open');
-  document.getElementById('f-casa').focus();
+  document.querySelector('.fab').classList.add('fab-open');
+  document.getElementById('f-desc').focus();
 }
 function editBet(id){ openModal(id); }
 function closeModal(){
   document.getElementById('modal-overlay').classList.remove('open');
+  document.querySelector('.fab').classList.remove('fab-open');
   editingId=null;
 }
 function handleOverlayClick(e){
@@ -740,6 +979,8 @@ function confirmCashout(){
   if(isNaN(cashoutVal) || cashoutVal < 0){ showToast('⚠️ Informe o valor do cashout'); return; }
   bet.status = 'cashout';
   bet.cashoutValue = cashoutVal;
+  _suppressRenderUntil = 0;
+  renderAll();
   saveOneBet(bet);
   closeCashout();
   const resultado = cashoutVal - (parseFloat(bet.valor)||0);
@@ -774,5 +1015,77 @@ function showToast(msg){
   t._timer=setTimeout(()=>t.classList.remove('show'),2400);
 }
 
+/* ── DRAG-TO-REORDER ── */
+(function(){
+  let startY = 0;
+  let moved = false;
+
+  document.addEventListener('touchstart', e=>{
+    const card = e.target.closest('.bet-card');
+    if(!card || e.target.closest('button, .bingo-item, .bet-card-header')) return;
+    moved = false;
+    startY = e.touches[0].clientY;
+    _pressTimer = setTimeout(()=>{
+      if(!moved) _startDrag(card, e.touches[0]);
+    }, 480);
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(Math.abs(e.touches[0].clientY - startY) > 8) moved = true;
+    if(!_drag){ if(moved){ clearTimeout(_pressTimer); _pressTimer=null; } return; }
+    e.preventDefault();
+    _moveDrag(e.touches[0]);
+  }, {passive:false});
+
+  document.addEventListener('touchend', ()=>{
+    clearTimeout(_pressTimer); _pressTimer = null;
+    if(_drag) _endDrag();
+  });
+})();
+
+function _startDrag(card, touch){
+  if(navigator.vibrate) navigator.vibrate(35);
+  const rect = card.getBoundingClientRect();
+  const ghost = card.cloneNode(true);
+  ghost.removeAttribute('id');
+  ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:600;pointer-events:none;opacity:0.88;transform:scale(1.03) rotate(0.6deg);box-shadow:0 24px 64px rgba(0,0,0,0.6);transition:none;overflow:hidden;`;
+  document.body.appendChild(ghost);
+  card.classList.add('card-dragging');
+  _drag = { card, ghost, startTouchY: touch.clientY, startCardTop: rect.top, height: rect.height };
+}
+
+function _moveDrag(touch){
+  if(!_drag) return;
+  const { card, ghost, startTouchY, startCardTop, height } = _drag;
+  const dy = touch.clientY - startTouchY;
+  ghost.style.top = (startCardTop + dy) + 'px';
+  const ghostCenter = touch.clientY;
+
+  const parent = card.parentElement;
+  const prev = card.previousElementSibling;
+  if(prev && prev.classList.contains('bet-card')){
+    const pr = prev.getBoundingClientRect();
+    if(ghostCenter < pr.top + pr.height/2) parent.insertBefore(card, prev);
+  }
+  const next = card.nextElementSibling;
+  if(next && next.classList.contains('bet-card')){
+    const nr = next.getBoundingClientRect();
+    if(ghostCenter > nr.top + nr.height/2) parent.insertBefore(next, card);
+  }
+}
+
+function _endDrag(){
+  const { card, ghost } = _drag;
+  _drag = null;
+  ghost.remove();
+  card.classList.remove('card-dragging');
+  const parent = card.parentElement;
+  if(!parent) return;
+  const newIds = [...parent.querySelectorAll('.bet-card')].map(c=>c.id.replace('card-',''));
+  updateOrderAfterDrag(newIds);
+  showToast('↕ Ordem salva');
+}
+
 /* ── INIT ── */
 renderAll();
+_customOrder = loadBetOrder();
