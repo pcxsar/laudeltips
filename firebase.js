@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC0yWy1kc-3wjBc4B679jYb9pohe8oLmps",
@@ -21,6 +21,11 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
     paulo:  "paulo_bets",
     hammel: "hammel_bets"
   };
+  const ALAV_COLLECTIONS = {
+    laudel: "alav_laudel",
+    paulo:  "alav_paulo",
+    hammel: "alav_hammel"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -28,6 +33,7 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
   window._db = db;
   window._firestoreFns = { doc, setDoc, deleteDoc, query, orderBy, onSnapshot, collection };
   window._profileCollections = PROFILE_COLLECTIONS;
+  window._alavCollections = ALAV_COLLECTIONS;
   window._activeListener = null;
   window._activeAlavListener = null;
 
@@ -61,9 +67,28 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
       }
     });
 
-    const alavRef = doc(db, "alavancagem", profile);
-    window._activeAlavListener = onSnapshot(alavRef, (snap) => {
-      alavancagem = snap.exists() ? snap.data() : null;
+    const alavColName = ALAV_COLLECTIONS[profile] || "alav_laudel";
+    const alavCol = collection(db, alavColName);
+
+    // One-time migration from the old single-document-per-profile structure
+    (async () => {
+      try {
+        const legacyRef = doc(db, "alavancagem", profile);
+        const legacySnap = await getDoc(legacyRef);
+        if (legacySnap.exists()) {
+          const data = legacySnap.data();
+          const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+          await setDoc(doc(db, alavColName, newId), { ...data, id: newId, createdAt: data.createdAt || Date.now() });
+          await deleteDoc(legacyRef);
+        }
+      } catch (e) {
+        console.error("Erro na migração de alavancagem:", e);
+      }
+    })();
+
+    const alavQ = query(alavCol, orderBy("createdAt", "desc"));
+    window._activeAlavListener = onSnapshot(alavQ, (snapshot) => {
+      alavancagens = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       renderAlavancagem();
     }, (err) => {
       console.error("Firebase alavancagem error:", err);

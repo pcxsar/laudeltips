@@ -1,5 +1,6 @@
 let bets = [];
-let alavancagem = null;
+let alavancagens = [];
+let currentAlavId = null;
 let editingId = null;
 let _suppressRenderUntil = 0;
 let deletingId = null;
@@ -61,7 +62,8 @@ function switchProfile(profile){
     btn.className = 'profile-btn' + (p === profile ? ' active-'+p : '');
   });
   bets = [];
-  alavancagem = null;
+  alavancagens = [];
+  currentAlavId = null;
   renderAll();
   renderAlavancagem();
   const loading = document.getElementById('firebase-loading');
@@ -727,18 +729,44 @@ function handleSaldoOverlay(e){
 }
 
 /* ── ALAVANCAGEM ── */
-async function saveAlavancagem(){
+function getCurrentAlav(){
+  return alavancagens.find(a=>a.id===currentAlavId) || null;
+}
+
+function fmtAlavDate(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mi = String(d.getMinutes()).padStart(2,'0');
+  return `${dd}/${mm} ${hh}:${mi}`;
+}
+
+async function saveAlavancagem(seq){
   try{
     const { doc, setDoc } = window._firestoreFns;
-    await setDoc(doc(window._db, "alavancagem", currentProfile), alavancagem);
+    const colName = window._alavCollections[currentProfile];
+    await setDoc(doc(window._db, colName, seq.id), seq);
   } catch(e){ console.error("Erro ao salvar alavancagem:", e); showToast("⚠️ Erro ao salvar"); }
 }
 
-async function deleteAlavancagem(){
+async function deleteAlavancagemDoc(id){
   try{
     const { doc, deleteDoc } = window._firestoreFns;
-    await deleteDoc(doc(window._db, "alavancagem", currentProfile));
+    const colName = window._alavCollections[currentProfile];
+    await deleteDoc(doc(window._db, colName, id));
   } catch(e){ console.error("Erro ao excluir alavancagem:", e); }
+}
+
+function openAlavancagem(id){
+  currentAlavId = id;
+  renderAlavancagem();
+}
+
+function backToAlavList(){
+  currentAlavId = null;
+  renderAlavancagem();
 }
 
 function startAlavancagem(){
@@ -746,20 +774,24 @@ function startAlavancagem(){
   const valor = parseFloat(input.value);
   if(!valor || valor<=0){ showToast('⚠️ Informe um valor inicial válido'); return; }
 
-  alavancagem = {
+  const seq = {
+    id: genId(),
     valorInicial: valor,
     steps: [{ id:genId(), valor:valor, odd:null, desc:'', status:'draft', retorno:null }],
     status: 'active',
     createdAt: Date.now()
   };
+  alavancagens.unshift(seq);
+  currentAlavId = seq.id;
   renderAlavancagem();
-  saveAlavancagem();
+  saveAlavancagem(seq);
   showToast('🚀 Alavancagem iniciada!');
 }
 
 function registerStep(){
-  if(!alavancagem || alavancagem.status!=='active') return;
-  const steps = alavancagem.steps;
+  const alav = getCurrentAlav();
+  if(!alav || alav.status!=='active') return;
+  const steps = alav.steps;
   const current = steps[steps.length-1];
   if(current.status!=='draft') return;
 
@@ -775,13 +807,14 @@ function registerStep(){
   current.status = 'open';
 
   renderAlavancagem();
-  saveAlavancagem();
+  saveAlavancagem(alav);
   showToast('📝 Aposta registrada — aguardando resultado');
 }
 
 function markStep(result){
-  if(!alavancagem || alavancagem.status!=='active') return;
-  const steps = alavancagem.steps;
+  const alav = getCurrentAlav();
+  if(!alav || alav.status!=='active') return;
+  const steps = alav.steps;
   const current = steps[steps.length-1];
   if(current.status!=='open') return;
 
@@ -795,12 +828,12 @@ function markStep(result){
     showToast('✅ Green! Nova rodada liberada');
   } else {
     current.retorno = 0;
-    alavancagem.status = 'finished';
+    alav.status = 'finished';
     showToast('💀 Alavancagem encerrada');
   }
 
   renderAlavancagem();
-  saveAlavancagem();
+  saveAlavancagem(alav);
 }
 
 /* Tooltip with bet description (registered + resolved steps) */
@@ -821,51 +854,134 @@ document.addEventListener('click', ()=>{
   document.querySelectorAll('.alav-step-info.open').forEach(o=>o.classList.remove('open'));
 });
 
-function askResetAlavancagem(){
+function canUndoAlavancagem(){
+  const alav = getCurrentAlav();
+  if(!alav) return false;
+  const steps = alav.steps;
+  if(alav.status==='finished') return true;
+  return steps.length>=2 && steps[steps.length-2].status==='green';
+}
+
+function askUndoStep(){
   deletingId='_alav_';
-  deletingType='alavancagem';
-  document.getElementById('confirm-icon').textContent = '↺';
-  document.getElementById('confirm-title').textContent = 'Nova Alavancagem?';
-  document.getElementById('confirm-msg').textContent = 'A alavancagem atual será encerrada e uma nova poderá ser iniciada do zero.';
-  document.getElementById('confirm-ok-btn').textContent = 'Reiniciar';
+  deletingType='alavancagem-undo';
+  document.getElementById('confirm-icon').textContent = '↩';
+  document.getElementById('confirm-title').textContent = 'Reverter jogada?';
+  document.getElementById('confirm-msg').textContent = 'A última jogada (green/red) será desfeita e você volta para a rodada anterior. Se a próxima rodada já tiver sido registrada, ela será descartada.';
+  document.getElementById('confirm-ok-btn').textContent = 'Reverter';
   document.getElementById('confirm-modal').classList.add('open');
 }
 
-function resetAlavancagem(){
-  alavancagem = null;
+function undoLastStep(){
+  const alav = getCurrentAlav();
+  if(!alav) return;
+  const steps = alav.steps;
+
+  if(alav.status==='finished'){
+    const last = steps[steps.length-1];
+    last.status = 'open';
+    last.retorno = null;
+    alav.status = 'active';
+  } else {
+    if(steps.length<2) return;
+    const prev = steps[steps.length-2];
+    if(prev.status!=='green') return;
+    steps.pop();
+    prev.status = 'open';
+    prev.retorno = null;
+  }
+
   renderAlavancagem();
-  deleteAlavancagem();
-  showToast('🔄 Pronto para uma nova alavancagem');
+  saveAlavancagem(alav);
+  showToast('↩ Jogada revertida');
+}
+
+function askDeleteAlavancagem(id){
+  deletingId = id;
+  deletingType = 'alavancagem-delete';
+  document.getElementById('confirm-icon').textContent = '🗑️';
+  document.getElementById('confirm-title').textContent = 'Excluir Alavancagem?';
+  document.getElementById('confirm-msg').textContent = 'Esta alavancagem e todo o seu histórico serão removidos permanentemente.';
+  document.getElementById('confirm-ok-btn').textContent = 'Excluir';
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function deleteAlavancagemSeq(id){
+  alavancagens = alavancagens.filter(a=>a.id!==id);
+  if(currentAlavId===id) currentAlavId = null;
+  renderAlavancagem();
+  deleteAlavancagemDoc(id);
+  showToast('🗑️ Alavancagem excluída');
 }
 
 function renderAlavancagem(){
   const el = document.getElementById('tab-alavancagem');
   if(!el) return;
   const badge = document.getElementById('badge-alavancagem');
+  if(badge) badge.textContent = alavancagens.length || '–';
 
-  if(!alavancagem){
-    if(badge) badge.textContent = '–';
-    el.innerHTML = `
-      <div class="alav-start">
-        <div class="alav-start-icon">🚀</div>
-        <div class="alav-start-title">Nova Alavancagem</div>
-        <div class="alav-start-sub">Defina o valor inicial e registre cada rodada com odds baixas, sempre all-in no retorno.</div>
+  const alav = getCurrentAlav();
+  if(!alav){
+    currentAlavId = null;
+    renderAlavList(el);
+    return;
+  }
+  renderAlavDetail(el, alav);
+}
+
+function renderAlavList(el){
+  const cardsHtml = alavancagens.map(a=>{
+    const steps = a.steps;
+    const finished = a.status === 'finished';
+    const current = !finished ? steps[steps.length-1] : null;
+    const bancaAtual = finished ? 0 : current.valor;
+    const mult = a.valorInicial>0 ? (bancaAtual/a.valorInicial) : 0;
+    return `
+    <div class="alav-card" onclick="openAlavancagem('${a.id}')">
+      <button class="alav-card-del" onclick="event.stopPropagation();askDeleteAlavancagem('${a.id}')" title="Excluir">🗑</button>
+      <div class="alav-card-top">
+        <span class="alav-card-status ${finished?'finished':'active'}">${finished?'Encerrada':'● Ativa'}</span>
+        <span class="alav-card-date">${fmtAlavDate(a.createdAt)}</span>
+      </div>
+      <div class="alav-card-nums">
+        <div class="alav-card-num">
+          <div class="alav-card-lbl">Inicial</div>
+          <div class="alav-card-val">${fmtMoney(a.valorInicial)}</div>
+        </div>
+        <div class="alav-card-arrow">→</div>
+        <div class="alav-card-num">
+          <div class="alav-card-lbl">${finished?'Final':'Atual'}</div>
+          <div class="alav-card-val ${finished?'red':'gold'}">${fmtMoney(bancaAtual)}</div>
+        </div>
+        <div class="alav-card-num">
+          <div class="alav-card-lbl">Mult.</div>
+          <div class="alav-card-val">${mult.toFixed(2)}x</div>
+        </div>
+      </div>
+      <div class="alav-card-foot">${steps.length} rodada${steps.length===1?'':'s'}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="alav-list-wrap">
+      <div class="alav-new-card">
+        <div class="alav-new-title">🚀 Nova Alavancagem</div>
         <div class="form-group">
           <label class="form-label">Valor Inicial (R$)</label>
           <input class="form-input" id="alav-valor-inicial" type="number" step="0.01" min="0" placeholder="100.00"/>
         </div>
         <button class="btn-save" onclick="startAlavancagem()">COMEÇAR ALAVANCAGEM</button>
-      </div>`;
-    return;
-  }
+      </div>
+      ${alavancagens.length ? `<div class="alav-list">${cardsHtml}</div>` : `<div class="alav-empty">Nenhuma alavancagem criada ainda. Comece uma acima ☝️</div>`}
+    </div>`;
+}
 
-  const steps = alavancagem.steps;
-  const finished = alavancagem.status === 'finished';
+function renderAlavDetail(el, alav){
+  const steps = alav.steps;
+  const finished = alav.status === 'finished';
   const current = !finished ? steps[steps.length-1] : null;
   const bancaAtual = finished ? 0 : current.valor;
-  const mult = alavancagem.valorInicial>0 ? (bancaAtual/alavancagem.valorInicial) : 0;
-
-  if(badge) badge.textContent = steps.length;
+  const mult = alav.valorInicial>0 ? (bancaAtual/alav.valorInicial) : 0;
 
   const stepsHtml = steps.map((s,i)=>{
     if(s.status==='draft'){
@@ -923,10 +1039,11 @@ function renderAlavancagem(){
 
   el.innerHTML = `
     <div class="alav-wrap">
+      <button class="alav-back-btn" onclick="backToAlavList()">← Minhas Alavancagens</button>
       <div class="alav-header">
         <div class="alav-banca-box">
           <div class="alav-banca-label">Inicial</div>
-          <div class="alav-banca-val">${fmtMoney(alavancagem.valorInicial)}</div>
+          <div class="alav-banca-val">${fmtMoney(alav.valorInicial)}</div>
         </div>
         <div class="alav-banca-box highlight">
           <div class="alav-banca-label">Banca Atual</div>
@@ -939,7 +1056,10 @@ function renderAlavancagem(){
       </div>
       <div class="alav-steps">${stepsHtml}</div>
       ${finishedHtml}
-      <button class="alav-reset-btn" onclick="askResetAlavancagem()">↺ Nova Alavancagem</button>
+      <div class="alav-actions">
+        ${canUndoAlavancagem() ? `<button class="alav-undo-btn" onclick="askUndoStep()">↩ Reverter Jogada</button>` : ''}
+        <button class="alav-reset-btn" onclick="askDeleteAlavancagem(currentAlavId)">🗑 Excluir Alavancagem</button>
+      </div>
     </div>`;
 }
 
@@ -1220,8 +1340,10 @@ function askDelete(id){
 function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); deletingId=null; }
 function executeDelete(){
   if(!deletingId) return;
-  if(deletingType==='alavancagem'){
-    resetAlavancagem();
+  if(deletingType==='alavancagem-delete'){
+    deleteAlavancagemSeq(deletingId);
+  } else if(deletingType==='alavancagem-undo'){
+    undoLastStep();
   } else {
     deleteOneBet(deletingId);
     showToast('🗑️ Aposta removida');

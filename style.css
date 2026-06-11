@@ -899,23 +899,6 @@ body::after{
 .tab-btn.tab-alav.active{color:var(--purple);border-bottom-color:var(--purple);}
 .tab-btn.tab-alav.active .tab-badge{background:rgba(167,139,250,0.12);color:var(--purple);}
 
-/* Start screen */
-.alav-start{
-  text-align:center;padding:40px 12px 20px;
-  display:flex;flex-direction:column;align-items:center;
-}
-.alav-start-icon{font-size:46px;margin-bottom:14px;line-height:1;}
-.alav-start-title{
-  font-family:'Anton',sans-serif;font-size:20px;letter-spacing:2px;
-  text-transform:uppercase;color:var(--purple);margin-bottom:10px;
-}
-.alav-start-sub{
-  font-size:13px;color:var(--text2);line-height:1.5;
-  max-width:340px;margin:0 auto 22px;
-}
-.alav-start .form-group{width:100%;max-width:340px;text-align:left;}
-.alav-start .btn-save{max-width:340px;margin-left:auto;margin-right:auto;}
-
 /* Header summary */
 .alav-header{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
 .alav-banca-box{
@@ -1027,15 +1010,82 @@ body::after{
 .alav-finished-title{font-family:'Anton',sans-serif;font-size:15px;letter-spacing:1px;color:var(--text);text-transform:uppercase;margin-bottom:6px;}
 .alav-finished-sub{font-size:12px;color:var(--red);font-family:'Space Mono',monospace;}
 
-/* Reset button */
-.alav-reset-btn{
-  width:100%;padding:13px;margin-top:18px;
+/* Action buttons (undo / reset) */
+.alav-actions{display:flex;gap:8px;margin-top:18px;}
+.alav-reset-btn,.alav-undo-btn{
+  flex:1;padding:13px;
   border-radius:var(--radius-sm);
   border:1.5px dashed var(--border2);background:transparent;
   color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;
   transition:all .15s;font-family:'DM Sans',sans-serif;
 }
-.alav-reset-btn:hover{border-color:rgba(167,139,250,0.42);color:var(--purple);background:rgba(167,139,250,0.04);}
+.alav-reset-btn:hover{border-color:rgba(255,61,90,0.42);color:var(--red);background:rgba(255,61,90,0.04);}
+.alav-undo-btn:hover{border-color:rgba(255,176,32,0.42);color:var(--amber);background:rgba(255,176,32,0.04);}
+
+/* Back navigation (detail view) */
+.alav-back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:transparent;border:none;color:var(--text3);
+  font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px;
+  transition:color .15s;font-family:'DM Sans',sans-serif;
+}
+.alav-back-btn:hover{color:var(--purple);}
+
+/* List view (multiple alavancagens) */
+.alav-list-wrap{display:flex;flex-direction:column;gap:18px;}
+
+.alav-new-card{
+  text-align:center;padding:24px 16px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  display:flex;flex-direction:column;align-items:center;
+}
+.alav-new-title{
+  font-family:'Anton',sans-serif;font-size:16px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--purple);margin-bottom:14px;
+}
+.alav-new-card .form-group{width:100%;max-width:340px;text-align:left;}
+.alav-new-card .btn-save{max-width:340px;margin-left:auto;margin-right:auto;}
+
+.alav-empty{
+  text-align:center;padding:30px 16px;color:var(--text3);
+  font-size:13px;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);
+}
+
+.alav-list{display:flex;flex-direction:column;gap:10px;}
+.alav-card{
+  position:relative;cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px;
+  transition:all .15s;
+}
+.alav-card:hover{border-color:rgba(167,139,250,0.35);background:var(--surface2);}
+
+.alav-card-del{
+  position:absolute;top:10px;right:10px;
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border2);background:var(--surface2);
+  color:var(--text3);cursor:pointer;font-size:12px;line-height:1;
+  transition:all .15s;
+}
+.alav-card-del:hover{color:var(--red);border-color:rgba(255,61,90,0.4);background:rgba(255,61,90,0.08);}
+
+.alav-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-right:30px;}
+.alav-card-status{font-size:11px;font-weight:700;letter-spacing:.5px;font-family:'Space Mono',monospace;}
+.alav-card-status.active{color:var(--green);}
+.alav-card-status.finished{color:var(--text3);}
+.alav-card-date{font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;}
+
+.alav-card-nums{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.alav-card-num{flex:1;text-align:center;}
+.alav-card-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:4px;font-family:'Space Mono',monospace;}
+.alav-card-val{font-family:'Anton',sans-serif;font-size:15px;color:var(--text);letter-spacing:.3px;}
+.alav-card-val.gold{color:var(--purple);}
+.alav-card-val.red{color:var(--red);}
+.alav-card-arrow{color:var(--text3);font-size:13px;flex-shrink:0;}
+
+.alav-card-foot{font-size:11px;color:var(--text3);text-align:center;font-family:'Space Mono',monospace;}
 
 @media(max-width:480px){
   .alav-step-current-top{flex-wrap:wrap;}
@@ -1046,4 +1096,6 @@ body::after{
   .alav-step-val,.alav-step-retorno{font-size:13px;}
   .alav-step-arrow{display:none;}
   .alav-step-badge{font-size:9px;padding:4px 8px;}
+  .alav-card-val{font-size:13px;}
+  .alav-card-lbl{font-size:8px;}
 }
