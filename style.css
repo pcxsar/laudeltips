@@ -936,9 +936,9 @@ body::after{
   display:flex;align-items:center;gap:12px;
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius-sm);padding:12px 14px;
-  position:relative;overflow:hidden;
+  position:relative;
 }
-.alav-step::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+.alav-step::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--radius-sm) 0 0 var(--radius-sm);}
 .alav-step-green::before{background:linear-gradient(to bottom,var(--green),rgba(0,232,122,0.3));}
 .alav-step-red::before{background:linear-gradient(to bottom,var(--red),rgba(255,61,90,0.3));}
 .alav-step-current::before{background:linear-gradient(to bottom,var(--purple),rgba(167,139,250,0.3));}
@@ -977,6 +977,46 @@ body::after{
 .alav-step-btns{display:flex;gap:8px;}
 .alav-step-btns .btn-result{flex:1;}
 
+/* "Adicionar aposta" button (registers odd + desc, before green/red) */
+.alav-btn-add{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,#c4b1ff,var(--purple));color:#1a1430;
+  border:none;border-radius:var(--radius-sm);cursor:pointer;
+  font-family:'Anton',sans-serif;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;
+  transition:all .18s;box-shadow:0 4px 18px rgba(167,139,250,0.3);
+}
+.alav-btn-add:hover{box-shadow:0 6px 24px rgba(167,139,250,0.42);transform:translateY(-1px);}
+.alav-btn-add:active{transform:translateY(0);}
+
+/* Registered odd (read-only display, awaiting result) */
+.alav-step-odd-display{
+  flex-shrink:0;font-family:'Space Mono',monospace;font-size:16px;font-weight:700;
+  color:var(--gold);background:var(--surface2);border:1.5px solid var(--border2);
+  border-radius:var(--radius-sm);padding:11px 18px;
+}
+
+/* Info icon + tooltip with the bet description (resolved steps) */
+.alav-step-info{
+  position:relative;flex-shrink:0;
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text3);border:1px solid var(--border2);background:var(--surface2);
+  cursor:pointer;transition:all .15s;
+}
+.alav-step-info svg{width:13px;height:13px;}
+.alav-step-info:hover{color:var(--purple);border-color:rgba(167,139,250,0.4);background:rgba(167,139,250,0.08);}
+.alav-step-tooltip{
+  display:none;position:absolute;bottom:calc(100% + 8px);right:0;
+  min-width:160px;max-width:220px;
+  background:var(--surface4);border:1px solid var(--border2);
+  border-radius:var(--radius-xs);padding:9px 12px;
+  font-size:12px;font-weight:400;color:var(--text2);line-height:1.4;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  z-index:20;text-align:left;white-space:normal;
+}
+.alav-step-info:hover .alav-step-tooltip,
+.alav-step-info.open .alav-step-tooltip{display:block;}
+
 /* Finished message */
 .alav-finished{
   text-align:center;padding:24px 16px;margin-top:14px;
@@ -1001,4 +1041,9 @@ body::after{
   .alav-step-current-top{flex-wrap:wrap;}
   .alav-odd-input{max-width:none;flex:1;}
   .alav-step-val-big{font-size:18px;}
+  .alav-step-odd-display{flex:1;text-align:center;padding:11px 8px;}
+  .alav-step{gap:6px;padding:11px 10px;}
+  .alav-step-val,.alav-step-retorno{font-size:13px;}
+  .alav-step-arrow{display:none;}
+  .alav-step-badge{font-size:9px;padding:4px 8px;}
 }

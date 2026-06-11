@@ -748,7 +748,7 @@ function startAlavancagem(){
 
   alavancagem = {
     valorInicial: valor,
-    steps: [{ id:genId(), valor:valor, odd:null, desc:'', status:'pending', retorno:null }],
+    steps: [{ id:genId(), valor:valor, odd:null, desc:'', status:'draft', retorno:null }],
     status: 'active',
     createdAt: Date.now()
   };
@@ -757,31 +757,42 @@ function startAlavancagem(){
   showToast('🚀 Alavancagem iniciada!');
 }
 
-function markStep(result){
+function registerStep(){
   if(!alavancagem || alavancagem.status!=='active') return;
   const steps = alavancagem.steps;
   const current = steps[steps.length-1];
+  if(current.status!=='draft') return;
 
   const oddInput = document.getElementById('alav-odd-input');
   const descInput = document.getElementById('alav-desc-input');
   const odd = parseFloat(oddInput.value);
   const desc = descInput ? descInput.value.trim() : '';
 
-  if(result==='green' && (!odd || odd<=1)){
-    showToast('⚠️ Informe uma odd válida');
-    return;
-  }
+  if(!odd || odd<=1){ showToast('⚠️ Informe uma odd válida'); return; }
 
-  current.odd = odd || 0;
+  current.odd = odd;
   current.desc = desc;
+  current.status = 'open';
+
+  renderAlavancagem();
+  saveAlavancagem();
+  showToast('📝 Aposta registrada — aguardando resultado');
+}
+
+function markStep(result){
+  if(!alavancagem || alavancagem.status!=='active') return;
+  const steps = alavancagem.steps;
+  const current = steps[steps.length-1];
+  if(current.status!=='open') return;
+
   current.status = result;
 
   if(result==='green'){
     const retorno = current.valor * current.odd;
     current.retorno = retorno;
-    steps.push({ id:genId(), valor:retorno, odd:null, desc:'', status:'pending', retorno:null });
+    steps.push({ id:genId(), valor:retorno, odd:null, desc:'', status:'draft', retorno:null });
     showGreenCelebration();
-    showToast('✅ Green! Próxima rodada liberada');
+    showToast('✅ Green! Nova rodada liberada');
   } else {
     current.retorno = 0;
     alavancagem.status = 'finished';
@@ -791,6 +802,24 @@ function markStep(result){
   renderAlavancagem();
   saveAlavancagem();
 }
+
+/* Tooltip with bet description (registered + resolved steps) */
+function infoIconHtml(desc){
+  if(!desc) return '';
+  return `<div class="alav-step-info" onclick="toggleStepInfo(this, event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.5" r="0.75" fill="currentColor" stroke="none"/></svg>
+    <div class="alav-step-tooltip">${escHtml(desc)}</div>
+  </div>`;
+}
+function toggleStepInfo(el, e){
+  if(e) e.stopPropagation();
+  const wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.alav-step-info.open').forEach(o=>o.classList.remove('open'));
+  if(!wasOpen) el.classList.add('open');
+}
+document.addEventListener('click', ()=>{
+  document.querySelectorAll('.alav-step-info.open').forEach(o=>o.classList.remove('open'));
+});
 
 function askResetAlavancagem(){
   deletingId='_alav_';
@@ -839,7 +868,7 @@ function renderAlavancagem(){
   if(badge) badge.textContent = steps.length;
 
   const stepsHtml = steps.map((s,i)=>{
-    if(s.status==='pending'){
+    if(s.status==='draft'){
       return `
       <div class="alav-step alav-step-current">
         <div class="alav-step-num">${i+1}</div>
@@ -849,6 +878,20 @@ function renderAlavancagem(){
             <input class="form-input alav-odd-input" id="alav-odd-input" type="number" step="0.01" min="1.01" placeholder="Odd"/>
           </div>
           <input class="form-input alav-desc-input" id="alav-desc-input" type="text" placeholder="Descrição da bet (opcional, só registro)"/>
+          <button class="alav-btn-add" onclick="registerStep()">+ ADICIONAR APOSTA</button>
+        </div>
+      </div>`;
+    }
+    if(s.status==='open'){
+      return `
+      <div class="alav-step alav-step-current alav-step-open">
+        <div class="alav-step-num">${i+1}</div>
+        <div class="alav-step-current-body">
+          <div class="alav-step-current-top">
+            <div class="alav-step-val-big">${fmtMoney(s.valor)}</div>
+            <div class="alav-step-odd-display">@ ${s.odd.toFixed(2)}</div>
+            ${infoIconHtml(s.desc)}
+          </div>
           <div class="alav-step-btns">
             <button class="btn-result btn-won" onclick="markStep('green')">GREEN</button>
             <button class="btn-result btn-lost" onclick="markStep('red')">RED</button>
@@ -866,6 +909,7 @@ function renderAlavancagem(){
       </div>
       <div class="alav-step-arrow">→</div>
       <div class="alav-step-retorno ${isGreen?'green':'red'}">${fmtMoney(s.retorno||0)}</div>
+      ${infoIconHtml(s.desc)}
       <div class="alav-step-badge ${isGreen?'green':'red'}">${isGreen?'✓ GREEN':'✗ RED'}</div>
     </div>`;
   }).join('');
