@@ -82,6 +82,11 @@
       Longo Prazo
       <span class="tab-badge" id="badge-longoprazo">0</span>
     </button>
+    <button class="tab-btn tab-alav" data-tab="alavancagem" onclick="switchTab('alavancagem')">
+      <span class="tab-icon">🚀</span>
+      Alavancagem
+      <span class="tab-badge" id="badge-alavancagem">–</span>
+    </button>
     <button class="tab-btn" data-tab="ganhas" onclick="switchTab('ganhas')">
       <span class="tab-icon">🏆</span>
       Ganhas
@@ -103,6 +108,7 @@
 <main class="main">
   <div id="tab-emjogo"    class="tab-panel active"></div>
   <div id="tab-longoprazo" class="tab-panel"></div>
+  <div id="tab-alavancagem" class="tab-panel"></div>
   <div id="tab-ganhas"   class="tab-panel"></div>
   <div id="tab-perdidas" class="tab-panel"></div>
   <div id="tab-todas"    class="tab-panel"></div>
@@ -220,12 +226,12 @@
 <!-- CONFIRM DELETE -->
 <div class="confirm-modal" id="confirm-modal">
   <div class="confirm-box">
-    <div class="confirm-icon">🗑️</div>
-    <div class="confirm-title">Excluir?</div>
-    <div class="confirm-msg">Esta ação não pode ser desfeita. A aposta será removida permanentemente.</div>
+    <div class="confirm-icon" id="confirm-icon">🗑️</div>
+    <div class="confirm-title" id="confirm-title">Excluir?</div>
+    <div class="confirm-msg" id="confirm-msg">Esta ação não pode ser desfeita. A aposta será removida permanentemente.</div>
     <div class="confirm-btns">
       <button class="btn-cancel-confirm" onclick="closeConfirm()">Cancelar</button>
-      <button class="btn-confirm-ok" onclick="executeDelete()">Excluir</button>
+      <button class="btn-confirm-ok" id="confirm-ok-btn" onclick="executeDelete()">Excluir</button>
     </div>
   </div>
 </div>

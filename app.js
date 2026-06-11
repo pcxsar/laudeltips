@@ -1,7 +1,9 @@
 let bets = [];
+let alavancagem = null;
 let editingId = null;
 let _suppressRenderUntil = 0;
 let deletingId = null;
+let deletingType = 'bet';
 let bingoCount = 0;
 let selectedBetType = 'normal';
 let selectedCasa = '';
@@ -59,7 +61,9 @@ function switchProfile(profile){
     btn.className = 'profile-btn' + (p === profile ? ' active-'+p : '');
   });
   bets = [];
+  alavancagem = null;
   renderAll();
+  renderAlavancagem();
   const loading = document.getElementById('firebase-loading');
   if(loading){
     loading.style.display = 'flex';
@@ -722,6 +726,179 @@ function handleSaldoOverlay(e){
   if(e.target === document.getElementById('saldo-drawer')) closeSaldoDrawer();
 }
 
+/* ── ALAVANCAGEM ── */
+async function saveAlavancagem(){
+  try{
+    const { doc, setDoc } = window._firestoreFns;
+    await setDoc(doc(window._db, "alavancagem", currentProfile), alavancagem);
+  } catch(e){ console.error("Erro ao salvar alavancagem:", e); showToast("⚠️ Erro ao salvar"); }
+}
+
+async function deleteAlavancagem(){
+  try{
+    const { doc, deleteDoc } = window._firestoreFns;
+    await deleteDoc(doc(window._db, "alavancagem", currentProfile));
+  } catch(e){ console.error("Erro ao excluir alavancagem:", e); }
+}
+
+function startAlavancagem(){
+  const input = document.getElementById('alav-valor-inicial');
+  const valor = parseFloat(input.value);
+  if(!valor || valor<=0){ showToast('⚠️ Informe um valor inicial válido'); return; }
+
+  alavancagem = {
+    valorInicial: valor,
+    steps: [{ id:genId(), valor:valor, odd:null, desc:'', status:'pending', retorno:null }],
+    status: 'active',
+    createdAt: Date.now()
+  };
+  renderAlavancagem();
+  saveAlavancagem();
+  showToast('🚀 Alavancagem iniciada!');
+}
+
+function markStep(result){
+  if(!alavancagem || alavancagem.status!=='active') return;
+  const steps = alavancagem.steps;
+  const current = steps[steps.length-1];
+
+  const oddInput = document.getElementById('alav-odd-input');
+  const descInput = document.getElementById('alav-desc-input');
+  const odd = parseFloat(oddInput.value);
+  const desc = descInput ? descInput.value.trim() : '';
+
+  if(result==='green' && (!odd || odd<=1)){
+    showToast('⚠️ Informe uma odd válida');
+    return;
+  }
+
+  current.odd = odd || 0;
+  current.desc = desc;
+  current.status = result;
+
+  if(result==='green'){
+    const retorno = current.valor * current.odd;
+    current.retorno = retorno;
+    steps.push({ id:genId(), valor:retorno, odd:null, desc:'', status:'pending', retorno:null });
+    showGreenCelebration();
+    showToast('✅ Green! Próxima rodada liberada');
+  } else {
+    current.retorno = 0;
+    alavancagem.status = 'finished';
+    showToast('💀 Alavancagem encerrada');
+  }
+
+  renderAlavancagem();
+  saveAlavancagem();
+}
+
+function askResetAlavancagem(){
+  deletingId='_alav_';
+  deletingType='alavancagem';
+  document.getElementById('confirm-icon').textContent = '↺';
+  document.getElementById('confirm-title').textContent = 'Nova Alavancagem?';
+  document.getElementById('confirm-msg').textContent = 'A alavancagem atual será encerrada e uma nova poderá ser iniciada do zero.';
+  document.getElementById('confirm-ok-btn').textContent = 'Reiniciar';
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function resetAlavancagem(){
+  alavancagem = null;
+  renderAlavancagem();
+  deleteAlavancagem();
+  showToast('🔄 Pronto para uma nova alavancagem');
+}
+
+function renderAlavancagem(){
+  const el = document.getElementById('tab-alavancagem');
+  if(!el) return;
+  const badge = document.getElementById('badge-alavancagem');
+
+  if(!alavancagem){
+    if(badge) badge.textContent = '–';
+    el.innerHTML = `
+      <div class="alav-start">
+        <div class="alav-start-icon">🚀</div>
+        <div class="alav-start-title">Nova Alavancagem</div>
+        <div class="alav-start-sub">Defina o valor inicial e registre cada rodada com odds baixas, sempre all-in no retorno.</div>
+        <div class="form-group">
+          <label class="form-label">Valor Inicial (R$)</label>
+          <input class="form-input" id="alav-valor-inicial" type="number" step="0.01" min="0" placeholder="100.00"/>
+        </div>
+        <button class="btn-save" onclick="startAlavancagem()">COMEÇAR ALAVANCAGEM</button>
+      </div>`;
+    return;
+  }
+
+  const steps = alavancagem.steps;
+  const finished = alavancagem.status === 'finished';
+  const current = !finished ? steps[steps.length-1] : null;
+  const bancaAtual = finished ? 0 : current.valor;
+  const mult = alavancagem.valorInicial>0 ? (bancaAtual/alavancagem.valorInicial) : 0;
+
+  if(badge) badge.textContent = steps.length;
+
+  const stepsHtml = steps.map((s,i)=>{
+    if(s.status==='pending'){
+      return `
+      <div class="alav-step alav-step-current">
+        <div class="alav-step-num">${i+1}</div>
+        <div class="alav-step-current-body">
+          <div class="alav-step-current-top">
+            <div class="alav-step-val-big">${fmtMoney(s.valor)}</div>
+            <input class="form-input alav-odd-input" id="alav-odd-input" type="number" step="0.01" min="1.01" placeholder="Odd"/>
+          </div>
+          <input class="form-input alav-desc-input" id="alav-desc-input" type="text" placeholder="Descrição da bet (opcional, só registro)"/>
+          <div class="alav-step-btns">
+            <button class="btn-result btn-won" onclick="markStep('green')">GREEN</button>
+            <button class="btn-result btn-lost" onclick="markStep('red')">RED</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    const isGreen = s.status==='green';
+    return `
+    <div class="alav-step alav-step-${isGreen?'green':'red'}">
+      <div class="alav-step-num">${i+1}</div>
+      <div class="alav-step-main">
+        <div class="alav-step-val">${fmtMoney(s.valor)}</div>
+        <div class="alav-step-odd">@ ${s.odd?s.odd.toFixed(2):'—'}</div>
+      </div>
+      <div class="alav-step-arrow">→</div>
+      <div class="alav-step-retorno ${isGreen?'green':'red'}">${fmtMoney(s.retorno||0)}</div>
+      <div class="alav-step-badge ${isGreen?'green':'red'}">${isGreen?'✓ GREEN':'✗ RED'}</div>
+    </div>`;
+  }).join('');
+
+  const finishedHtml = finished ? `
+    <div class="alav-finished">
+      <div class="alav-finished-icon">💀</div>
+      <div class="alav-finished-title">Alavancagem encerrada na rodada ${steps.length}</div>
+      <div class="alav-finished-sub">Banca final: ${fmtMoney(0)}</div>
+    </div>` : '';
+
+  el.innerHTML = `
+    <div class="alav-wrap">
+      <div class="alav-header">
+        <div class="alav-banca-box">
+          <div class="alav-banca-label">Inicial</div>
+          <div class="alav-banca-val">${fmtMoney(alavancagem.valorInicial)}</div>
+        </div>
+        <div class="alav-banca-box highlight">
+          <div class="alav-banca-label">Banca Atual</div>
+          <div class="alav-banca-val gold">${fmtMoney(bancaAtual)}</div>
+        </div>
+        <div class="alav-banca-box">
+          <div class="alav-banca-label">Multiplicador</div>
+          <div class="alav-banca-val">${mult.toFixed(2)}x</div>
+        </div>
+      </div>
+      <div class="alav-steps">${stepsHtml}</div>
+      ${finishedHtml}
+      <button class="alav-reset-btn" onclick="askResetAlavancagem()">↺ Nova Alavancagem</button>
+    </div>`;
+}
+
 /* ── BINGO ── */
 function toggleBingo(id,idx){
   const bet = bets.find(b=>b.id===id);
@@ -987,13 +1164,25 @@ function confirmCashout(){
 }
 
 /* ── DELETE ── */
-function askDelete(id){ deletingId=id; document.getElementById('confirm-modal').classList.add('open'); }
+function askDelete(id){
+  deletingId=id;
+  deletingType='bet';
+  document.getElementById('confirm-icon').textContent = '🗑️';
+  document.getElementById('confirm-title').textContent = 'Excluir?';
+  document.getElementById('confirm-msg').textContent = 'Esta ação não pode ser desfeita. A aposta será removida permanentemente.';
+  document.getElementById('confirm-ok-btn').textContent = 'Excluir';
+  document.getElementById('confirm-modal').classList.add('open');
+}
 function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); deletingId=null; }
 function executeDelete(){
   if(!deletingId) return;
-  deleteOneBet(deletingId);
+  if(deletingType==='alavancagem'){
+    resetAlavancagem();
+  } else {
+    deleteOneBet(deletingId);
+    showToast('🗑️ Aposta removida');
+  }
   closeConfirm();
-  showToast('🗑️ Aposta removida');
 }
 
 /* ── AUTO CALC RETORNO ── */
@@ -1087,4 +1276,5 @@ function _endDrag(){
 
 /* ── INIT ── */
 renderAll();
+renderAlavancagem();
 _customOrder = loadBetOrder();

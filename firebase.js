@@ -29,11 +29,16 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
   window._firestoreFns = { doc, setDoc, deleteDoc, query, orderBy, onSnapshot, collection };
   window._profileCollections = PROFILE_COLLECTIONS;
   window._activeListener = null;
+  window._activeAlavListener = null;
 
   window._startProfileListener = function(profile) {
     if (window._activeListener) {
       window._activeListener();
       window._activeListener = null;
+    }
+    if (window._activeAlavListener) {
+      window._activeAlavListener();
+      window._activeAlavListener = null;
     }
     const colName = PROFILE_COLLECTIONS[profile] || "copa_bets";
     const betsCol = collection(db, colName);
@@ -54,6 +59,14 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
           <small style="opacity:.7">Verifique as credenciais e se o Firestore está ativado.</small>
         </div>`;
       }
+    });
+
+    const alavRef = doc(db, "alavancagem", profile);
+    window._activeAlavListener = onSnapshot(alavRef, (snap) => {
+      alavancagem = snap.exists() ? snap.data() : null;
+      renderAlavancagem();
+    }, (err) => {
+      console.error("Firebase alavancagem error:", err);
     });
   };
 
