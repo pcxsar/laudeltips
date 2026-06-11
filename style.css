@@ -492,6 +492,7 @@ body::after{
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
 }
 .modal-overlay.open{display:flex;}
+#saque-overlay{z-index:400;}
 .modal{
   background:var(--surface);border:1px solid var(--border2);
   border-top:1px solid rgba(255,255,255,0.07);
@@ -788,10 +789,62 @@ body::after{
 .sd-perf-val.negative{color:var(--red);text-shadow:0 0 20px rgba(255,61,90,0.25);}
 .sd-perf-sub{font-size:10px;color:var(--text3);font-family:'DM Sans',sans-serif;}
 
+/* Fluxo de caixa (apostado / retorno / sacado / depositado) */
+.sd-flow{padding:18px;border-bottom:1px solid var(--border);}
+.sd-flow-title{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.sd-flow-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border2),transparent);}
+.sd-flow-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.sd-flow-card{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 10px;text-align:center;
+}
+.sd-flow-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:'Space Mono',monospace;}
+.sd-flow-val{font-family:'Anton',sans-serif;font-size:17px;letter-spacing:.3px;color:var(--text);}
+.sd-flow-val.green{color:var(--green);}
+.sd-flow-val.amber{color:var(--amber);}
+.sd-flow-val.purple{color:var(--purple);}
+.sd-flow-pool{
+  margin-top:12px;padding:10px 14px;border-radius:var(--radius-sm);
+  background:rgba(0,232,122,0.06);border:1px solid rgba(0,232,122,0.18);
+  color:var(--text2);font-size:12px;text-align:center;
+}
+.sd-flow-pool strong{color:var(--green);font-family:'Anton',sans-serif;font-weight:400;letter-spacing:.3px;}
+.sd-saque-btn{
+  width:100%;margin-top:14px;padding:13px;
+  background:linear-gradient(135deg,#ffe090,var(--amber));color:#1a1430;
+  border:none;border-radius:var(--radius-sm);cursor:pointer;
+  font-family:'Anton',sans-serif;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;
+  transition:all .18s;box-shadow:0 4px 18px rgba(255,176,32,0.28);
+}
+.sd-saque-btn:hover{box-shadow:0 6px 24px rgba(255,176,32,0.4);transform:translateY(-1px);}
+.sd-saque-btn:active{transform:translateY(0);}
+
+/* Histórico de saques */
+.sd-saque-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:10px;
+}
+.sd-saque-left{display:flex;align-items:center;gap:10px;min-width:0;}
+.sd-saque-icon{font-size:16px;flex-shrink:0;}
+.sd-saque-desc{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sd-saque-date{font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px;}
+.sd-saque-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sd-saque-val{font-family:'Anton',sans-serif;font-size:14px;letter-spacing:.3px;color:var(--amber);}
+.sd-saque-del{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border2);background:var(--surface3);
+  color:var(--text3);cursor:pointer;font-size:12px;
+  transition:all .15s;
+}
+.sd-saque-del:hover{color:var(--red);border-color:rgba(255,61,90,0.4);background:rgba(255,61,90,0.08);}
+
 .sd-body{padding:18px;}
 .sd-section-title{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
 .sd-section-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border2),transparent);}
 .sd-empty{text-align:center;padding:36px 20px;font-size:14px;color:var(--text3);}
+.sd-empty-sm{padding:20px;font-size:12px;margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);}
 .sd-empty-icon{font-size:32px;margin-bottom:10px;opacity:.35;}
 
 .sd-bet-row{

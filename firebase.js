@@ -26,6 +26,11 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
     paulo:  "alav_paulo",
     hammel: "alav_hammel"
   };
+  const SAQUE_COLLECTIONS = {
+    laudel: "saques_laudel",
+    paulo:  "saques_paulo",
+    hammel: "saques_hammel"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -34,8 +39,10 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
   window._firestoreFns = { doc, setDoc, deleteDoc, query, orderBy, onSnapshot, collection };
   window._profileCollections = PROFILE_COLLECTIONS;
   window._alavCollections = ALAV_COLLECTIONS;
+  window._saqueCollections = SAQUE_COLLECTIONS;
   window._activeListener = null;
   window._activeAlavListener = null;
+  window._activeSaqueListener = null;
 
   window._startProfileListener = function(profile) {
     if (window._activeListener) {
@@ -45,6 +52,10 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
     if (window._activeAlavListener) {
       window._activeAlavListener();
       window._activeAlavListener = null;
+    }
+    if (window._activeSaqueListener) {
+      window._activeSaqueListener();
+      window._activeSaqueListener = null;
     }
     const colName = PROFILE_COLLECTIONS[profile] || "copa_bets";
     const betsCol = collection(db, colName);
@@ -92,6 +103,18 @@ if (firebaseConfig.apiKey === 'COLE_SUA_API_KEY_AQUI') {
       renderAlavancagem();
     }, (err) => {
       console.error("Firebase alavancagem error:", err);
+    });
+
+    const saqueColName = SAQUE_COLLECTIONS[profile] || "saques_laudel";
+    const saqueCol = collection(db, saqueColName);
+    const saqueQ = query(saqueCol, orderBy("createdAt", "desc"));
+    window._activeSaqueListener = onSnapshot(saqueQ, (snapshot) => {
+      saques = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (document.getElementById('saldo-drawer').classList.contains('open')) {
+        openSaldoDrawer();
+      }
+    }, (err) => {
+      console.error("Firebase saques error:", err);
     });
   };
 

@@ -129,6 +129,7 @@
     </div>
     <div class="sd-summary" id="sd-summary"></div>
     <div class="sd-perf" id="sd-perf"></div>
+    <div class="sd-flow" id="sd-flow"></div>
     <div class="sd-body" id="sd-body"></div>
   </div>
 </div>
@@ -253,6 +254,32 @@
       </div>
       <div id="cashout-preview"></div>
       <button class="btn-save" onclick="confirmCashout()" style="background:linear-gradient(135deg,#ffca50,var(--amber));box-shadow:0 4px 20px rgba(255,176,32,0.3);">CONFIRMAR CASHOUT</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAQUE MODAL -->
+<div class="modal-overlay" id="saque-overlay" onclick="handleSaqueOverlay(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">💸 Realizar Saque</span>
+      <button class="modal-close" onclick="closeSaqueModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Valor (R$)</label>
+        <input class="form-input" id="f-saque-valor" type="number" step="0.01" min="0" placeholder="0.00"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data</label>
+        <input class="form-input" id="f-saque-data" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição (opcional)</label>
+        <input class="form-input" id="f-saque-desc" type="text" placeholder="Ex: Saque para conta corrente"/>
+      </div>
+      <button class="btn-save" onclick="confirmSaque()">CONFIRMAR SAQUE</button>
     </div>
   </div>
 </div>

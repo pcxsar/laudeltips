@@ -1,6 +1,7 @@
 let bets = [];
 let alavancagens = [];
 let currentAlavId = null;
+let saques = [];
 let editingId = null;
 let _suppressRenderUntil = 0;
 let deletingId = null;
@@ -64,6 +65,7 @@ function switchProfile(profile){
   bets = [];
   alavancagens = [];
   currentAlavId = null;
+  saques = [];
   renderAll();
   renderAlavancagem();
   const loading = document.getElementById('firebase-loading');
@@ -561,6 +563,104 @@ function renderSaldoChart(points){
 </div>`;
 }
 
+/* ── FLUXO DE CAIXA (apostado / retorno / sacado / depositado) ── */
+function computeFinanceSummary(){
+  const events = [];
+  bets.forEach(b=>{
+    const status = getBetStatus(b);
+    const valor = parseFloat(b.valor)||0;
+    let retornoEvent = 0;
+    if(status==='won') retornoEvent = parseFloat(b.retorno)||0;
+    else if(status==='cashout') retornoEvent = parseFloat(b.cashoutValue)||0;
+    events.push({ date: b.createdAt||0, type:'bet', valor, retornoEvent });
+  });
+  saques.forEach(s=>{
+    events.push({ date: s.createdAt||0, type:'saque', valor: parseFloat(s.valor)||0 });
+  });
+  events.sort((a,b)=>a.date-b.date);
+
+  let pool = 0, totalApostado=0, totalRetorno=0, totalSacado=0, totalDepositado=0;
+  events.forEach(e=>{
+    if(e.type==='bet'){
+      totalApostado += e.valor;
+      pool -= e.valor;
+      if(pool < 0){ totalDepositado += -pool; pool = 0; }
+      if(e.retornoEvent > 0){
+        pool += e.retornoEvent;
+        totalRetorno += e.retornoEvent;
+      }
+    } else {
+      totalSacado += e.valor;
+      pool -= e.valor;
+    }
+  });
+  return { totalApostado, totalRetorno, totalSacado, totalDepositado, poolDisponivel: pool };
+}
+
+/* ── SAQUES ── */
+async function saveSaque(saque){
+  try{
+    const { doc, setDoc } = window._firestoreFns;
+    const colName = window._saqueCollections[currentProfile];
+    await setDoc(doc(window._db, colName, saque.id), saque);
+  } catch(e){ console.error("Erro ao salvar saque:", e); showToast("⚠️ Erro ao salvar"); }
+}
+
+async function deleteSaqueDoc(id){
+  try{
+    const { doc, deleteDoc } = window._firestoreFns;
+    const colName = window._saqueCollections[currentProfile];
+    await deleteDoc(doc(window._db, colName, id));
+  } catch(e){ console.error("Erro ao excluir saque:", e); }
+}
+
+function openSaqueModal(){
+  document.getElementById('f-saque-valor').value = '';
+  document.getElementById('f-saque-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-saque-desc').value = '';
+  document.getElementById('saque-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSaqueModal(){
+  document.getElementById('saque-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleSaqueOverlay(e){
+  if(e.target === document.getElementById('saque-overlay')) closeSaqueModal();
+}
+function confirmSaque(){
+  const valor = parseFloat(document.getElementById('f-saque-valor').value);
+  const data = document.getElementById('f-saque-data').value;
+  const desc = document.getElementById('f-saque-desc').value.trim();
+
+  if(!valor || valor<=0){ showToast('⚠️ Informe um valor válido'); return; }
+  if(!data){ showToast('⚠️ Informe a data'); return; }
+
+  const saque = { id: genId(), valor, data, desc, createdAt: Date.now() };
+  saques.unshift(saque);
+  saveSaque(saque);
+  closeSaqueModal();
+  showToast('💸 Saque registrado');
+  openSaldoDrawer();
+}
+
+function askDeleteSaque(id){
+  deletingId = id;
+  deletingType = 'saque';
+  document.getElementById('confirm-icon').textContent = '🗑️';
+  document.getElementById('confirm-title').textContent = 'Excluir Saque?';
+  document.getElementById('confirm-msg').textContent = 'Este registro de saque será removido permanentemente.';
+  document.getElementById('confirm-ok-btn').textContent = 'Excluir';
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function deleteSaqueEntry(id){
+  saques = saques.filter(s=>s.id!==id);
+  deleteSaqueDoc(id);
+  openSaldoDrawer();
+  showToast('🗑️ Saque removido');
+}
+
 /* ── SALDO DRAWER ── */
 function openSaldoDrawer(){
   const drawer = document.getElementById('saldo-drawer');
@@ -634,6 +734,31 @@ function openSaldoDrawer(){
     </div>
   `;
 
+  const flow = computeFinanceSummary();
+  document.getElementById('sd-flow').innerHTML = `
+    <div class="sd-flow-title">💰 Fluxo de Caixa</div>
+    <div class="sd-flow-grid">
+      <div class="sd-flow-card">
+        <div class="sd-flow-lbl">Total Apostado</div>
+        <div class="sd-flow-val">${fmtMoney(flow.totalApostado)}</div>
+      </div>
+      <div class="sd-flow-card">
+        <div class="sd-flow-lbl">Total Retorno</div>
+        <div class="sd-flow-val green">${fmtMoney(flow.totalRetorno)}</div>
+      </div>
+      <div class="sd-flow-card">
+        <div class="sd-flow-lbl">Total Sacado</div>
+        <div class="sd-flow-val amber">${fmtMoney(flow.totalSacado)}</div>
+      </div>
+      <div class="sd-flow-card">
+        <div class="sd-flow-lbl">Total Depositado</div>
+        <div class="sd-flow-val purple">${fmtMoney(flow.totalDepositado)}</div>
+      </div>
+    </div>
+    ${flow.poolDisponivel > 0.005 ? `<div class="sd-flow-pool">💵 Lucro disponível para reinvestir ou sacar: <strong>${fmtMoney(flow.poolDisponivel)}</strong></div>` : ''}
+    <button class="sd-saque-btn" onclick="openSaqueModal()">💸 Realizar Saque</button>
+  `;
+
   // Build chronological running balance for chart + bet rows
   const ordered = [...finalizadas].reverse();
   let running = 0;
@@ -653,6 +778,29 @@ function openSaldoDrawer(){
   });
 
   let bodyHtml = renderSaldoChart(chartPoints);
+
+  bodyHtml += `<div class="sd-section-title">Histórico de Saques</div>`;
+  if(!saques.length){
+    bodyHtml += `<div class="sd-empty sd-empty-sm"><div class="sd-empty-icon">💸</div>Nenhum saque registrado ainda</div>`;
+  } else {
+    [...saques].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(s=>{
+      bodyHtml += `
+        <div class="sd-saque-row">
+          <div class="sd-saque-left">
+            <span class="sd-saque-icon">💸</span>
+            <div>
+              <div class="sd-saque-desc">${s.desc?escHtml(s.desc):'Saque'}</div>
+              <div class="sd-saque-date">${fmtDate(s.data)}</div>
+            </div>
+          </div>
+          <div class="sd-saque-right">
+            <span class="sd-saque-val">${fmtMoney(s.valor)}</span>
+            <button class="sd-saque-del" onclick="askDeleteSaque('${s.id}')" title="Excluir">🗑</button>
+          </div>
+        </div>`;
+    });
+  }
+
   bodyHtml += `<div class="sd-section-title">Apostas Finalizadas</div>`;
 
   if(!finalizadas.length){
@@ -1344,6 +1492,8 @@ function executeDelete(){
     deleteAlavancagemSeq(deletingId);
   } else if(deletingType==='alavancagem-undo'){
     undoLastStep();
+  } else if(deletingType==='saque'){
+    deleteSaqueEntry(deletingId);
   } else {
     deleteOneBet(deletingId);
     showToast('🗑️ Aposta removida');
