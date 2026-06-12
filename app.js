@@ -1084,6 +1084,8 @@ function renderAlavList(el){
     const current = !finished ? steps[steps.length-1] : null;
     const bancaAtual = finished ? 0 : current.valor;
     const mult = a.valorInicial>0 ? (bancaAtual/a.valorInicial) : 0;
+    const aguardando = !finished && current.status==='open' && current.odd;
+    const proximoVal = aguardando ? current.valor * current.odd : 0;
     return `
     <div class="alav-card" onclick="openAlavancagem('${a.id}')">
       <button class="alav-card-del" onclick="event.stopPropagation();askDeleteAlavancagem('${a.id}')" title="Excluir">🗑</button>
@@ -1100,10 +1102,12 @@ function renderAlavList(el){
         <div class="alav-card-num">
           <div class="alav-card-lbl">${finished?'Final':'Atual'}</div>
           <div class="alav-card-val ${finished?'red':'gold'}">${fmtMoney(bancaAtual)}</div>
+          ${aguardando?`<div class="alav-card-proj">🎯 ${fmtMoney(proximoVal)}</div>`:''}
         </div>
         <div class="alav-card-num">
           <div class="alav-card-lbl">Mult.</div>
           <div class="alav-card-val">${mult.toFixed(2)}x</div>
+          ${aguardando?`<div class="alav-card-proj">${(proximoVal/a.valorInicial).toFixed(2)}x</div>`:''}
         </div>
       </div>
       <div class="alav-card-foot">${steps.length} rodada${steps.length===1?'':'s'}</div>
