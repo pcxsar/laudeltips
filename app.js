@@ -1160,6 +1160,11 @@ function renderAlavDetail(el, alav){
             <div class="alav-step-odd-display">@ ${s.odd.toFixed(2)}</div>
             ${infoIconHtml(s.desc)}
           </div>
+          <div class="alav-step-current-proj">
+            <span class="alav-step-current-proj-arrow">→</span>
+            <span class="alav-step-current-proj-val">${fmtMoney(s.valor * s.odd)}</span>
+            <span class="alav-step-current-proj-lbl">se GREEN</span>
+          </div>
           <div class="alav-step-btns">
             <button class="btn-result btn-won" onclick="markStep('green')">GREEN</button>
             <button class="btn-result btn-lost" onclick="markStep('red')">RED</button>
